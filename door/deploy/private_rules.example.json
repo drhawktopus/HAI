@@ -1,0 +1,25 @@
+{
+ "_about": "Uhura's private lists, one regular expression per list (the pattern carries its own flags, such as (?i)). Copy to private_rules.json beside publish_library.py, or name the file in UHURA_PRIVATE_RULES. UHURA_PRIVATE_RULES=none publishes with empty lists.",
+ "private_names": {
+  "pattern": "(?i)^(person-records|.*credential)"
+ },
+ "people": {
+  "pattern": "\\b(Name1|Name2)\\b"
+ },
+ "always_private": {
+  "pattern": "(?i)a-name-never-published"
+ },
+ "intimate": {
+  "pattern": "(?i)\\b(word1|word2)\\b"
+ },
+ "soft_intimate": {
+  "pattern": "(?i)\\b(a-word-private-unless-in-the-benchmark)\\b"
+ },
+ "benchmark": {
+  "pattern": "(?i)a-public-benchmark-name"
+ },
+ "closed_topics": {
+  "pattern": "(?i)a-closed-project-name"
+ },
+ "owner_name": "Owner"
+}

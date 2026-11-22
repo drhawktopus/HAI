@@ -1,0 +1,14 @@
+.env
+state/
+published/
+desk/
+__pycache__/
+.pytest_cache/
+deploy/publish_transcripts.log
+
+# install_completion_hooks.py saves the original notify command here: machine state, not source (2026-11-14)
+deploy/completion-notify-target.json
+
+# the lab's private word lists for the publisher: data, not code; stays home
+deploy/private_rules.json
+deploy/uhura.env

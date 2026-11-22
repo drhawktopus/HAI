@@ -1,0 +1,486 @@
+The lab's changes to the Krea 2 trainer (FOUNDRY_AITK_KREA2): upstream https://github.com/ostris/ai-toolkit at
+73ebae13a468942ded8b47991b5d56eeeea25c36 (setup/krea2_trainer_setup.py installs that commit). In that checkout:
+    git apply ai-toolkit-krea2-lab.patch
+It is what the four appliers in setup/ write: [P20-INSTR], [P20-RESUME] (byte-identical resume), [P20-EXIT]
+(the process ends before interpreter shutdown), [P20-TECACHE] (the deferred text encoder). Paths read FOUNDRY_ROOT.
+
+--- a/extensions_built_in/diffusion_models/krea2/krea2.py
++++ b/extensions_built_in/diffusion_models/krea2/krea2.py
+@@ -57,6 +57,62 @@
+ )
+ from .src.text_encoder import encode_krea_prompt, SELECT_LAYERS
+ from .src.pipeline import Krea2Pipeline, pad_text_features, predict_velocity
++
++# [P20-TECACHE] deferred text encoder + content-addressed static-prompt cache (setup/p20_apply_te_cache.py)
++import hashlib as _p20_hashlib
++import json as _p20_json
++import time as _p20_time
++from toolkit.unloader import FakeTextEncoder
++
++
++def _p20_te_lazy(model):
++    return os.environ.get("P20_TE_LAZY") == "1" and not model.is_edit
++
++
++def _p20_te_path(model):
++    return model.model_config.model_kwargs.get("text_encoder_path", QWEN3_VL_PATH)
++
++
++def _p20_static_key(model, prompts):
++    te = _p20_te_path(model)
++    files = []
++    if os.path.isdir(te):
++        for n in sorted(os.listdir(te)):
++            p = os.path.join(te, n)
++            if os.path.isfile(p) and n.endswith((".safetensors", ".bin", ".json")):
++                st = os.stat(p)
++                files.append([n, st.st_size, int(st.st_mtime)])
++    # identity = the encoder's files (name, size, mtime), not its folder: a verified copy on another drive is the
++    # same encoder (robocopy keeps mtimes), so it shares one cache
++    return _p20_json.dumps({"v": 1, "te_files": files,
++                            "max_len": model.max_text_length, "layers": list(SELECT_LAYERS),
++                            "dtype": str(model.torch_dtype), "prompts": list(prompts)}, sort_keys=True)
++
++
++def _p20_static_path(model, key):
++    te = _p20_te_path(model).rstrip("\\/")
++    d = os.environ.get("P20_TE_CACHE_DIR") or os.path.join(os.path.dirname(te), "p20_te_static_cache")
++    return os.path.join(d, _p20_hashlib.sha256(key.encode("utf-8")).hexdigest() + ".pt")
++
++
++def _p20_static_get(model, prompts):
++    key = _p20_static_key(model, prompts)
++    p = _p20_static_path(model, key)
++    if not os.path.exists(p):
++        return None
++    d = torch.load(p, map_location="cpu", weights_only=False)
++    if d.get("key") != key:
++        return None
++    return AdvancedPromptEmbeds(text_embeds=[t.to(model.device_torch) for t in d["text_embeds"]])
++
++
++def _p20_static_put(model, prompts, embeds):
++    key = _p20_static_key(model, prompts)
++    p = _p20_static_path(model, key)
++    os.makedirs(os.path.dirname(p), exist_ok=True)
++    tmp = p + ".tmp"
++    torch.save({"key": key, "text_embeds": [t.detach().to("cpu") for t in embeds.text_embeds]}, tmp)
++    os.replace(tmp, p)
+ 
+ if TYPE_CHECKING:
+     from toolkit.data_transfer_object.data_loader import DataLoaderBatchDTO
+@@ -258,6 +314,24 @@
+         text_encoder.requires_grad_(False)
+         flush()
+         return tokenizer, processor, vl_processor, text_encoder
++
++    def _p20_load_tokenizers(self):
++        # [P20-TECACHE] the light half of _load_text_encoder (same calls, same arguments)
++        te_path = _p20_te_path(self)
++        tokenizer = AutoTokenizer.from_pretrained(te_path, max_length=self.max_text_length, token=HF_TOKEN)
++        processor = Qwen2TokenizerFast.from_pretrained(te_path, max_length=self.max_text_length, token=HF_TOKEN)
++        return tokenizer, processor, None
++
++    def _p20_te_real(self, why):
++        # [P20-TECACHE] load the real encoder on demand, exactly as load_model would have
++        t0 = _p20_time.time()
++        tokenizer, processor, vl_processor, text_encoder = self._load_text_encoder()
++        text_encoder.aitk_post_load(**self.component_load_kwargs("te"))
++        self.tokenizer, self.processor, self.vl_processor = tokenizer, processor, vl_processor
++        self.text_encoder = text_encoder
++        flush()
++        self.print_and_status_update("[P20-TECACHE] text encoder loaded on demand (%s) in %.0f s"
++                                     % (why, _p20_time.time() - t0))
+ 
+     def _load_vae(self):
+         vae_path = self.model_config.model_kwargs.get("vae_path", QWEN_IMAGE_VAE_PATH)
+@@ -386,8 +460,15 @@
+         transformer.aitk_post_load(**self.component_load_kwargs("transformer"))
+         flush()
+ 
+-        tokenizer, processor, vl_processor, text_encoder = self._load_text_encoder()
+-        text_encoder.aitk_post_load(**self.component_load_kwargs("te"))
++        if _p20_te_lazy(self):
++            # [P20-TECACHE] the text encoder loads only when a prompt is not cached (see _p20_te_real)
++            tokenizer, processor, vl_processor = self._p20_load_tokenizers()
++            text_encoder = FakeTextEncoder(device=self.device_torch, dtype=self.torch_dtype)
++            self.print_and_status_update("[P20-TECACHE] text encoder deferred - it loads on the first prompt that is "
++                                         "not cached")
++        else:
++            tokenizer, processor, vl_processor, text_encoder = self._load_text_encoder()
++            text_encoder.aitk_post_load(**self.component_load_kwargs("te"))
+         flush()
+ 
+         vae = self._load_vae()
+@@ -638,6 +719,15 @@
+         if isinstance(prompt, str):
+             prompt = [prompt]
+ 
++        # [P20-TECACHE] static prompts from the content-addressed cache; anything else needs the real encoder
++        _p20_static = _p20_te_lazy(self) and getattr(self, "_p20_static", False) and control_images is None
++        if _p20_static:
++            _hit = _p20_static_get(self, prompt)
++            if _hit is not None:
++                return _hit
++        if isinstance(self.text_encoder, FakeTextEncoder):
++            self._p20_te_real("static prompt not cached yet" if _p20_static else "a prompt with no cache entry")
++
+         if self.text_encoder.device == torch.device("cpu"):
+             self.text_encoder.to(self.device_torch)
+ 
+@@ -685,7 +775,10 @@
+             features = features.reshape(features.shape[0], -1)
+             features_list.append(features.to(self.torch_dtype))
+ 
+-        return AdvancedPromptEmbeds(text_embeds=features_list)
++        _p20_out = AdvancedPromptEmbeds(text_embeds=features_list)
++        if _p20_static:
++            _p20_static_put(self, prompt, _p20_out)   # [P20-TECACHE]
++        return _p20_out
+ 
+     def get_loss_target(self, *args, **kwargs):
+         # Flow-matching velocity target: noise - clean.
+--- a/extensions_built_in/sd_trainer/SDTrainer.py
++++ b/extensions_built_in/sd_trainer/SDTrainer.py
+@@ -141,6 +141,14 @@
+         return control_image
+ 
+     def encode_static_prompt(self, prompt, **kwargs):
++        # [P20-TECACHE] mark static prompts so the model may serve them from its content-addressed cache
++        self.sd._p20_static = True
++        try:
++            return self._p20_encode_static_prompt(prompt, **kwargs)
++        finally:
++            self.sd._p20_static = False
++
++    def _p20_encode_static_prompt(self, prompt, **kwargs):
+         # static embeds (blank/trigger/uncond/DOP class) are always plain text.
+         # Some models (edit models) cannot encode a prompt without control images
+         # and raise, only then fall back to a blank control image. Real errors
+--- a/jobs/process/BaseSDTrainProcess.py
++++ b/jobs/process/BaseSDTrainProcess.py
+@@ -76,6 +76,140 @@
+ from toolkit.util.blended_blur_noise import get_blended_blur_noise
+ from toolkit.util.get_model import get_model_class
+ from toolkit.basic import flush
++
++
++
++# [P20-RESUME] byte-identical resume: full-precision adapter weights, every RNG, and the data position.
++def _p20_rng_get():
++    return {"torch": torch.get_rng_state(),
++            "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
++            "numpy": np.random.get_state(),
++            "python": random.getstate()}
++
++
++def _p20_rng_set(s):
++    torch.set_rng_state(s["torch"])
++    if s.get("cuda") is not None and torch.cuda.is_available():
++        torch.cuda.set_rng_state_all(s["cuda"])
++    np.random.set_state(s["numpy"])
++    random.setstate(s["python"])
++
++
++def _p20_seed_from_env():
++    v = os.environ.get("P20_TRAIN_SEED", "").strip()
++    if not v:
++        return None
++    s = int(v)
++    random.seed(s)
++    np.random.seed(s)
++    torch.manual_seed(s)
++    if torch.cuda.is_available():
++        torch.cuda.manual_seed_all(s)
++    print_acc("[P20-RESUME] training seed %d (P20_TRAIN_SEED)" % s)
++    return s
++
++
++class _P20Counting:
++    """Counts the batches an epoch's iterator hands out - the data position a resume replays."""
++
++    def __init__(self, it, rec):
++        self.it, self.rec = it, rec
++
++    def __iter__(self):
++        return self
++
++    def __next__(self):
++        b = next(self.it)
++        self.rec["consumed"] += 1
++        return b
++
++
++def _p20_iter(proc, dataloader, reset):
++    res = getattr(proc, "_p20_resume", None)
++    if res is not None and res.get("data"):
++        d = res["data"]
++        _p20_rng_set(d["rng"])
++        proc._p20_epoch = {"rng": d["rng"], "reset": d["reset"], "consumed": 0}
++        it = _P20Counting(iter(dataloader), proc._p20_epoch)
++        for _ in range(int(d["consumed"])):
++            next(it)
++        _p20_rng_set(res["rng"])
++        proc._p20_resume = None
++        print_acc("[P20-RESUME] data position replayed (%d batch(es) into the epoch), every RNG restored"
++                  % int(d["consumed"]))
++        return it
++    proc._p20_epoch = {"rng": _p20_rng_get(), "reset": reset, "consumed": 0}
++    return _P20Counting(iter(dataloader), proc._p20_epoch)
++
++
++def _p20_next_step(proc):
++    """The step a resume from this save must train first. Inside the loop (and on STOP_NOW's break) step_num is the
++    index just trained; after a loop that ran to the end it is the step COUNT, every update already done."""
++    return proc.step_num if proc.step_num >= proc.train_config.steps else proc.step_num + 1
++
++
++def _p20_save_resume(proc):
++    """Never raises: a failed sidecar costs the byte-identical resume, never the save itself."""
++    try:
++        if proc.network is None:
++            return
++        state = {"step": proc.step_num, "epoch": proc.epoch_num,
++                 "next_step": _p20_next_step(proc),
++                 "network": {k: v.detach().to("cpu").clone() for k, v in proc.network.state_dict().items()},
++                 "rng": _p20_rng_get(),
++                 "data": dict(getattr(proc, "_p20_epoch", None) or {}) or None}
++        path = os.path.join(proc.save_root, "p20_resume_%09d.pt" % proc.step_num)
++        torch.save(state, path + ".tmp")
++        os.replace(path + ".tmp", path)
++        print_acc("[P20-RESUME] full state saved: %s" % path)
++        olds = sorted(glob.glob(os.path.join(proc.save_root, "p20_resume_*.pt")))
++        for old in olds[:-3]:
++            os.remove(old)
++    except Exception as e:
++        print_acc("[P20-RESUME] full state NOT saved (%r) - a resume from here would not be byte-identical" % (e,))
++
++
++def _p20_load_resume(proc):
++    """After the checkpoint is loaded (step N from its metadata): full-precision weights + RNG + data position from
++    the sidecar when it exists, and resume at the sidecar's next_step (N+1 without one)."""
++    if not proc.step_num:
++        return
++    n = proc.step_num
++    path = os.path.join(proc.save_root, "p20_resume_%09d.pt" % n)
++    if os.path.exists(path):
++        state = torch.load(path, map_location="cpu", weights_only=False)
++        missing, unexpected = proc.network.load_state_dict(state["network"], strict=False)
++        if missing or unexpected:
++            raise RuntimeError("[P20-RESUME] sidecar does not match the network: missing %d, unexpected %d"
++                               % (len(missing), len(unexpected)))
++        proc._p20_resume = state
++        print_acc("[P20-RESUME] full state loaded for step %d (float32 adapter, RNG, data position)" % n)
++    else:
++        print_acc("[P20-RESUME] no full-state sidecar for step %d - resuming the classic way: the adapter is the "
++                  "rounded checkpoint and the random streams and data order start fresh (NOT byte-identical)" % n)
++    res = getattr(proc, "_p20_resume", None)
++    proc.step_num = int(res["next_step"]) if res is not None and res.get("next_step") is not None else n + 1
++    proc.start_step = proc.step_num
++    print_acc("[P20-RESUME] resuming at step %d (checkpoint labelled %d holds every update before it)"
++              % (proc.step_num, n))
++
++
++def _p20_exit_watchdog(seconds=120):
++    """Every file of the run is written (the final save just ran). If the process is still alive `seconds` later - a
++    teardown stuck in the GPU driver, which holds the card and keeps the foundry's lane closed - end it so the foundry
++    sees the trainer exit. A normal exit beats the timer and this does nothing."""
++    import sys as _sys, threading as _threading, time as _time
++
++    def _later():
++        _time.sleep(seconds)
++        print_acc("[P20-RESUME] exit watchdog: still alive %ds after the final save - forcing exit "
++                  "(every file is already written)" % seconds)
++        try:
++            _sys.stdout.flush()
++            _sys.stderr.flush()
++        finally:
++            os._exit(0)
++    _threading.Thread(target=_later, daemon=True).start()
+ 
+ 
+ class BaseSDTrainProcess(BaseTrainProcess):
+@@ -710,6 +844,7 @@
+                     state_dict = self.optimizer.state_dict()
+                 torch.save(state_dict, file_path)
+                 print_acc(f"Saved optimizer to {file_path}")
++                _p20_save_resume(self)  # [P20-RESUME]
+             except Exception as e:
+                 print_acc(e)
+                 print_acc("Could not save optimizer")
+@@ -1720,6 +1855,9 @@
+             self.sd.unet.train()
+ 
+     def run(self):
++
++        # [P20-RESUME] optional training seed, before the adapter is initialised
++        self._p20_train_seed = _p20_seed_from_env()
+         # torch.autograd.set_detect_anomaly(True)
+         # run base process run
+         BaseTrainProcess.run(self)
+@@ -2030,6 +2168,7 @@
+                     print_acc(f"#### IMPORTANT RESUMING FROM {latest_save_path} ####")
+                     print_acc(f"Loading from {latest_save_path}")
+                     extra_weights = self.load_weights(latest_save_path)
++                    _p20_load_resume(self)  # [P20-RESUME]
+                     self.network.multiplier = 1.0
+                 elif self.train_config.merge_network_on_save and self.network_config.pretrained_lora_path is not None:
+                     # with merge_network_on_save, saved checkpoints are full models that get loaded as the
+@@ -2504,7 +2643,7 @@
+ 
+         if self.data_loader is not None:
+             dataloader = self.data_loader
+-            dataloader_iterator = iter(dataloader)
++            dataloader_iterator = _p20_iter(self, dataloader, reset=False)  # [P20-RESUME]
+         else:
+             dataloader = None
+             dataloader_iterator = None
+@@ -2544,6 +2683,18 @@
+             if self.train_config.do_paramiter_swapping:
+                 self.optimizer.optimizer.swap_paramiters()
+             self.timer.start('train_loop')
++            # [P20-INSTR] device-vs-wall timing + allocator stats. Fail-safe: must never break training.
++            _p20_t0 = None; _p20_ev0 = None; _p20_ev1 = None
++            try:
++                import time as _p20_time, torch as _p20_torch
++                _p20_t0 = _p20_time.perf_counter()
++                if _p20_torch.cuda.is_available():
++                    _p20_ev0 = _p20_torch.cuda.Event(enable_timing=True)
++                    _p20_ev1 = _p20_torch.cuda.Event(enable_timing=True)
++                    _p20_ev0.record()
++            except Exception:
++                pass
++
+             if flush_next:
+                 flush()
+                 flush_next = False
+@@ -2562,6 +2713,23 @@
+                 # todo improve this logic to send one of each through if we can buckets and batch size might be an issue
+                 is_reg_step = False
+                 is_save_step = self.save_config.save_every and self.step_num % self.save_config.save_every == 0
++                # [P20-INSTR] manual save/stop triggers (ai-toolkit has no save-on-interrupt).
++                #   SAVE_NOW -> checkpoint at the current step and keep training
++                #   STOP_NOW -> checkpoint at the current step, then exit the loop cleanly (0 steps lost)
++                try:
++                    _p20_flagdir = os.path.join(os.environ.get("FOUNDRY_ROOT") or r"F:\foundry", "var", "state")
++                    _p20_save = os.path.join(_p20_flagdir, 'SAVE_NOW')
++                    _p20_stop = os.path.join(_p20_flagdir, 'STOP_NOW')
++                    if os.path.exists(_p20_save):
++                        is_save_step = True
++                        os.remove(_p20_save)
++                    if os.path.exists(_p20_stop):
++                        is_save_step = True
++                        self._p20_stop_after_save = True
++                        os.remove(_p20_stop)
++                except Exception:
++                    pass
++
+                 is_sample_step = (
+                     self.sample_config.sample_every
+                     and self.step_num >= self.sample_config.sample_start_step
+@@ -2596,7 +2764,7 @@
+                         except StopIteration:
+                             with self.timer('reset_batch'):
+                                 # hit the end of an epoch, reset
+-                                dataloader_iterator = iter(dataloader)
++                                dataloader_iterator = _p20_iter(self, dataloader, reset=True)  # [P20-RESUME]
+                                 trigger_dataloader_setup_epoch(dataloader)
+                                 self.epoch_num += 1
+                                 if self.train_config.gradient_accumulation_steps == -1:
+@@ -2662,6 +2830,28 @@
+                 print("\n==== Profile Results ====")
+                 print(self.torch_profiler.key_averages().table(sort_by="cpu_time_total", row_limit=1000))
+             self.timer.stop('train_loop')
++            # [P20-INSTR] close the step measurement and append a row.
++            # NB: the CUDA sync below is itself a (small) perturbation - intended for benchmark runs.
++            try:
++                _p20_dev_ms = -1.0
++                if _p20_ev0 is not None:
++                    _p20_ev1.record(); _p20_torch.cuda.synchronize()
++                    _p20_dev_ms = _p20_ev0.elapsed_time(_p20_ev1)
++                _p20_wall_ms = (_p20_time.perf_counter() - _p20_t0) * 1000.0
++                _p20_ms = _p20_torch.cuda.memory_stats()
++                _p20_path = os.path.join(os.environ.get("FOUNDRY_ROOT") or r"F:\foundry", "var", "state", "telemetry", "step_instr.csv")
++                if not os.path.exists(_p20_path):
++                    with open(_p20_path, 'w') as _pf:
++                        _pf.write('step,wall_ms,device_ms,alloc_retries,reserved_mb,allocated_mb\n')
++                with open(_p20_path, 'a') as _pf:
++                    _pf.write('%d,%.1f,%.1f,%d,%.1f,%.1f\n' % (
++                        self.step_num, _p20_wall_ms, _p20_dev_ms,
++                        _p20_ms.get('num_alloc_retries', -1),
++                        _p20_ms.get('reserved_bytes.all.current', 0) / 1048576.0,
++                        _p20_ms.get('allocated_bytes.all.current', 0) / 1048576.0))
++            except Exception:
++                pass
++
+ 
+             # run validation before any possible sampling/logging for this step
+             if not did_oom and self.train_config.validation_config is not None:
+@@ -2729,6 +2919,11 @@
+                         optimizer.zero_grad()
+                         flush()
+                         flush_next = True
++                        # [P20-INSTR] honor STOP_NOW: we just saved, so exit with zero lost steps.
++                        if getattr(self, '_p20_stop_after_save', False):
++                            print_acc('\n[P20] STOP_NOW honored - saved at step %d, exiting cleanly.' % self.step_num)
++                            break
++
+                         if self.progress_bar is not None:
+                             self.progress_bar.unpause()
+                             
+@@ -2827,6 +3022,7 @@
+             self.sd.pipeline.disable_freeu()
+         if self.accelerator.is_main_process:
+             self.save()
++            _p20_exit_watchdog()  # [P20-RESUME]
+         if not self.train_config.disable_sampling:
+             self.sample(self.step_num)
+             self.logger.commit(step=self.step_num)
+--- a/run.py
++++ b/run.py
+@@ -147,5 +147,44 @@
+                 sys.exit(0)
+ 
+ 
++def _p20_hard_exit(code):
++    # [P20-EXIT] see setup/p20_apply_hard_exit.py: end the process before interpreter shutdown, whose
++    # GPU-runtime teardown can hang past every kill.
++    try:
++        import logging
++        logging.shutdown()
++    except Exception:
++        pass
++    for _s in (sys.stdout, sys.stderr):
++        try:
++            _s.flush()
++        except Exception:
++            pass
++    if os.name == 'nt':
++        try:
++            import ctypes
++            _k = ctypes.windll.kernel32
++            _k.GetCurrentProcess.restype = ctypes.c_void_p
++            _k.TerminateProcess.argtypes = (ctypes.c_void_p, ctypes.c_uint)
++            _k.TerminateProcess(_k.GetCurrentProcess(), code & 0xFFFFFFFF)
++        except Exception:
++            pass
++    os._exit(code)
++
++
+ if __name__ == '__main__':
+-    main()
++    # [P20-EXIT] same exit codes as before; only the route out changes
++    try:
++        main()
++        _p20_code = 0
++    except SystemExit as _e:
++        _p20_code = _e.code if isinstance(_e.code, int) else (0 if _e.code is None else 1)
++        if _e.code is not None and not isinstance(_e.code, int):
++            print(_e.code, file=sys.stderr)
++    except BaseException:
++        import traceback
++        traceback.print_exc()
++        _p20_code = 1
++    print_acc("[P20-EXIT] job returned (exit code %d) - ending the process now, before interpreter shutdown"
++              % _p20_code)
++    _p20_hard_exit(_p20_code)

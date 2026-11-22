@@ -1,0 +1,2 @@
+# Shell scripts run under bash on the tablet head (rigby): a CRLF checkout breaks them (the same rule as the other repos).
+*.sh text eol=lf

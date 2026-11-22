@@ -1,0 +1,94 @@
+{
+ "id": "000748ab95a6",
+ "kind": "factory_order",
+ "order_name": "hardbench-fleet-grid-bi-vl8b-f1-t00-off-s7-vl8b.20260929-182205_bighonker",
+ "spec": {
+  "name": "hardbench-fleet-grid-bi-vl8b-f1-t00-off-s7-vl8b.20260929-182205_bighonker",
+  "mode": "compute",
+  "load": "gpu",
+  "initiator": "ClaudeSupervisor",
+  "payload": "{FOUNDRY_ROOT}\\bin\\infer_ollama.py",
+  "args": [
+   "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260929\\fleet-grid-bi-vl8b-f1-t00-off-s7\\items.20260929-182205.json",
+   "{ORDER_OUT}\\out.json",
+   "--model",
+   "qwen3-vl:8b",
+   "--rounds",
+   "3",
+   "--num-ctx",
+   "5120",
+   "--temperature",
+   "0.0",
+   "--seed-base",
+   "7",
+   "--grade",
+   "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\payloads\\map_swarm_code_hard.py"
+  ],
+  "progress_glob": "{ORDER_OUT}\\out.progress\\*.done",
+  "progress_total": 33,
+  "deliver_to": "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260929\\fleet-grid-bi-vl8b-f1-t00-off-s7",
+  "notify": "failures",
+  "caption_model": "aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M",
+  "caption_workers": 4,
+  "python_exe": "F:\\comfy-bench\\venv\\Scripts\\python.exe",
+  "requires": [
+   "order.compute",
+   "model.qwen3-vl:8b"
+  ],
+  "placed_by": "scheduler.compose_orders",
+  "placed_on": "bighonker",
+  "pinned_to": [
+   "bighonker"
+  ]
+ },
+ "requires": [
+  "order.compute",
+  "model.qwen3-vl:8b"
+ ],
+ "rush": false,
+ "after_ids": [],
+ "step": "",
+ "host": "bighonker",
+ "status": "failed",
+ "route": {
+  "template": {
+   "name": "hardbench-fleet-grid-bi-vl8b-f1-t00-off-s7-vl8b.20260929-182205",
+   "mode": "compute",
+   "load": "gpu",
+   "initiator": "ClaudeSupervisor",
+   "payload": "{FOUNDRY_ROOT}\\bin\\infer_ollama.py",
+   "args": [
+    "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260929\\fleet-grid-bi-vl8b-f1-t00-off-s7\\items.20260929-182205.json",
+    "{ORDER_OUT}\\out.json",
+    "--model",
+    "qwen3-vl:8b",
+    "--rounds",
+    "3",
+    "--num-ctx",
+    "5120",
+    "--temperature",
+    "0.0",
+    "--seed-base",
+    "7",
+    "--grade",
+    "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\payloads\\map_swarm_code_hard.py"
+   ],
+   "progress_glob": "{ORDER_OUT}\\out.progress\\*.done",
+   "progress_total": 33,
+   "deliver_to": "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260929\\fleet-grid-bi-vl8b-f1-t00-off-s7",
+   "notify": "failures"
+  },
+  "kind": "",
+  "only": [
+   "bighonker"
+  ],
+  "exclude": [],
+  "items": null
+ },
+ "initiator": "fleet-desk",
+ "created": "2026-09-29T23:22:03.666498+00:00",
+ "claimed_by": "bighonker",
+ "claimed_at": "2026-09-30T00:38:25.555034+00:00",
+ "updated": "2026-10-02T15:07:49.675403+00:00",
+ "error": "cancelled on bighonker by operator slip: 2026-10-02 P34 arm stop rule (the owner): qwen3-vl:8b coding CANNOT FIT on this box - it ignores think:false and its answers end at the 5,120 tested max; see menu_f"
+}

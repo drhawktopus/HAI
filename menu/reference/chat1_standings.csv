@@ -1,0 +1,36 @@
+box,family,shape,model,think,temperature,n,success,s_per_solve,j_per_solve,status
+bighonker,chat-turn,S1,qwen3.5:9b,off,,63,1.0,3.0,630.3,holds
+bighonker,chat-turn,S1,qwen3:8b,off,,63,1.0,1.69,358.1,holds
+softserve,chat-turn,S1,qwen3.5:9b,off,,21,1.0,3.67,959.9,PRELIMINARY
+softserve,chat-turn,S1,qwen3:8b,off,,21,1.0,1.97,548.6,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-0.5B-Instruct-Q4_K_M @class A,n/a,,7,0.7143,12.54,31.3,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-0.5B-Instruct-Q4_K_M @class A (warm),n/a,,8,0.625,3.4,8.6,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-0.5B-Instruct-Q4_K_M @class B,n/a,,23,0.8696,8.85,22.1,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-0.5B-Instruct-Q4_K_M @class B (warm),n/a,,26,0.8846,6.04,15.1,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-0.5B-Instruct-Q4_K_M @class C,n/a,,5,0.8,25.6,64.0,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-0.5B-Instruct-Q4_K_M @class C (warm),n/a,,1,1.0,34.8,87.0,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-1.5B-Instruct-Q4_K_M @class A,n/a,,14,0.9286,13.38,33.5,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-1.5B-Instruct-Q4_K_M @class A (warm),n/a,,16,0.9375,11.31,28.3,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-1.5B-Instruct-Q4_K_M @class B,n/a,,16,1.0,54.43,136.1,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-1.5B-Instruct-Q4_K_M @class B (warm),n/a,,12,1.0,5.48,13.7,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-1.5B-Instruct-Q4_K_M @class C,n/a,,5,1.0,26.24,65.6,PRELIMINARY
+fellowship,chat-turn,S1,Qwen2.5-Coder-1.5B-Instruct-Q4_K_M @class C (warm),n/a,,7,1.0,6.04,15.1,PRELIMINARY
+fellowship,chat-turn,S1,Qwen3.5-0.8B-Q4_K_M @class ? (warm),off,,61,0.7869,16.69,41.7,holds
+fellowship,chat-turn,S1,Qwen3.5-0.8B-Q4_K_M @class A,off,,7,0.8571,34.78,87.0,PRELIMINARY
+fellowship,chat-turn,S1,Qwen3.5-0.8B-Q4_K_M @class A (warm),off,,98,0.8673,22.93,57.3,holds
+fellowship,chat-turn,S1,Qwen3.5-0.8B-Q4_K_M @class B,off,,23,0.913,30.26,75.6,PRELIMINARY
+fellowship,chat-turn,S1,Qwen3.5-0.8B-Q4_K_M @class B (warm),off,,289,0.8927,24.99,62.5,holds
+fellowship,chat-turn,S1,Qwen3.5-0.8B-Q4_K_M @class C,off,,5,0.8,51.42,128.6,PRELIMINARY
+fellowship,chat-turn,S1,Qwen3.5-0.8B-Q4_K_M @class C (warm),off,,77,0.8571,24.61,61.5,holds
+fellowship,chat-turn,S1,Qwen3.5-2B-Q4_K_M @class A,off,,18,1.0,54.66,136.6,PRELIMINARY
+fellowship,chat-turn,S1,Qwen3.5-2B-Q4_K_M @class A (warm),off,,20,1.0,38.89,97.2,PRELIMINARY
+fellowship,chat-turn,S1,Qwen3.5-2B-Q4_K_M @class B,off,,13,1.0,94.58,236.4,PRELIMINARY
+fellowship,chat-turn,S1,Qwen3.5-2B-Q4_K_M @class B (warm),off,,10,1.0,506.21,1265.5,PRELIMINARY
+fellowship,chat-turn,S1,Qwen3.5-2B-Q4_K_M @class C,off,,4,1.0,188.5,471.2,PRELIMINARY
+fellowship,chat-turn,S1,Qwen3.5-2B-Q4_K_M @class C (warm),off,,5,1.0,53.1,132.8,PRELIMINARY
+rigby,chat-turn,S1,Qwen2.5-1.5B-Instruct-Q4_K_M.gguf,default,0.7,35,1.0,1.9,186.5,PRELIMINARY
+rigby,chat-turn,S1,Qwen2.5-7B-Instruct-Q4_K_M.gguf,default,0.7,35,1.0,17.12,1677.8,PRELIMINARY
+rigby,chat-turn,S1,Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf,off,0.7,35,1.0,35.86,3514.0,PRELIMINARY
+mothership,chat-turn,S1,qwen3.8:27b,high,,21,1.0,18.43,9788.5,PRELIMINARY
+mothership,chat-turn,S1,qwen3.8:27b,off,,63,1.0,3.06,1404.1,holds
+mothership,chat-turn,S1,qwen3.8:27b,xhigh,,21,1.0,19.61,10038.2,PRELIMINARY

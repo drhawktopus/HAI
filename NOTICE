@@ -1,0 +1,39 @@
+Required Notice: Copyright Nick Crowley (https://portfolio.hawktopus.org)
+
+HAI is licensed under the PolyForm Noncommercial License 1.0.0 (LICENSE.md,
+https://polyformproject.org/licenses/noncommercial/1.0.0). Personal, hobby, research and educational use is
+permitted. Commercial use is not.
+
+Third-party code: foundry/workspace/flashnext/strata_server_lab.py is derived from Strata's serve/server.py
+(https://github.com/Niko1221/Strata), Copyright (c) 2026 Niko1221 and the Strata contributors, MIT License;
+the full notice is at the top of that file. The lab's changes to it ship under the licence above.
+
+The following carry parts of other projects, each under the MIT License whose text is below; the lab's changes to them
+ship under the licence above:
+
+- engine/: patches to llama.cpp (https://github.com/ggml-org/llama.cpp), which quote parts of its source.
+  Copyright (c) 2023-2026 The ggml authors.
+- foundry/aitk/: patches to ai-toolkit (https://github.com/ostris/ai-toolkit), and
+  foundry/aitk/krea2/setup/run_orig.py, its run.py unchanged (a test fixture). Copyright (c) 2024 Ostris, LLC.
+- menu/inspect_lab/fixtures/tiktoken_cache/: tiktoken's o200k_base encoding (https://github.com/openai/tiktoken).
+  Copyright (c) 2022 OpenAI, Shantanu Jain.
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

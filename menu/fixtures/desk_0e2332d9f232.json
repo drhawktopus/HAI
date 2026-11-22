@@ -1,0 +1,40 @@
+{
+ "id": "0e2332d9f232",
+ "kind": "factory_order",
+ "order_name": "s30-code-codingrunner-moverework_mothership",
+ "spec": {
+  "name": "s30-code-codingrunner-moverework_mothership",
+  "mode": "compute",
+  "load": "gpu",
+  "payload": "{FOUNDRY_ROOT}\\bin\\triage_code.py",
+  "args": [
+   "\\10.0.0.204\\SSDShared\\library-triage\\s30-code-codingrunner-moverework.work.json",
+   "\\10.0.0.204\\SSDShared\\library-triage\\s30-code-codingrunner-moverework.drafts.json"
+  ],
+  "notify": "failures",
+  "caption_model": "aha2025/llama-joycaption-beta-one-hf-llava:Q8_0",
+  "caption_workers": 4,
+  "python_exe": "F:\\ai-toolkit\\venv\\python.exe",
+  "requires": [
+   "order.compute",
+   "model.qwen3.6:27b"
+  ],
+  "placed_by": "scheduler.compose_orders",
+  "placed_on": "mothership"
+ },
+ "requires": [
+  "order.compute",
+  "model.qwen3.6:27b"
+ ],
+ "rush": false,
+ "after_ids": [],
+ "step": "",
+ "host": "mothership",
+ "status": "failed",
+ "initiator": "fleet-desk",
+ "created": "2026-08-27T01:19:36.905354+00:00",
+ "claimed_by": "mothership",
+ "claimed_at": "2026-08-27T01:20:04.923450+00:00",
+ "updated": "2026-08-27T01:20:25.208945+00:00",
+ "error": "exited rc=1: FileNotFoundError: [Errno 2] No such file or directory: '\\\\10.0.0.204\\\\SSDShared\\\\library-triage\\\\s30-code-codingrunner-moverework.work.json'"
+}

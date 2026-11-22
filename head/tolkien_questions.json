@@ -1,0 +1,29 @@
+{
+  "worker": {
+    "type": "choice",
+    "instructions": "You advise Tolkien, the scheduler of a home lab's small-device factory (rigby and its tablets). Decide which worker should run this ONE piece of work (you do not run it).",
+    "criteria": {
+      "rigby": "rigby: the strongest node (a small GPU and a desktop CPU); larger models, longer context, the best single answer",
+      "tablet-A": "a class A tablet: the fastest tablets; small models (about 1.5B parameters or less), one answer each, many at once",
+      "tablet-B": "a class B tablet: mid-speed tablets; small models (1.5B or less), simple pieces",
+      "tablet-C": "a class C tablet: the slowest tablets; the smallest models, the simplest pieces and background work"
+    }
+  },
+  "tries": {
+    "type": "choice",
+    "instructions": "How many independent tries should this piece get?",
+    "criteria": {
+      "1": "one try: a simple piece, or one whose answer is already reliable",
+      "few": "a few tries (2-3): a checker or a vote picks the best answer",
+      "many": "many tries across tablets: a hard piece a checker can verify, worth a swarm"
+    }
+  },
+  "escalate": {
+    "type": "choice",
+    "instructions": "Should this piece stay in the small-device factory or go up to the bigger machines?",
+    "criteria": {
+      "stay": "stay: rigby or the tablets can do it well",
+      "up": "pass the whole piece up: it needs a bigger model than rigby or the tablets have"
+    }
+  }
+}

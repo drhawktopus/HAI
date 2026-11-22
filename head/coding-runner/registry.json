@@ -1,0 +1,227 @@
+{
+  "workspaces": [
+    {
+      "id": "sample",
+      "path": "workspaces/sample",
+      "description": "Disposable calculator fixture for coding-agent development",
+      "read": true,
+      "write": true,
+      "git": true,
+      "protected_paths": [
+        ".env",
+        "secrets"
+      ],
+      "ignored_paths": [
+        ".git",
+        "__pycache__"
+      ],
+      "commands": {
+        "unit": [
+          "python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-t",
+          "tests",
+          "-v"
+        ],
+        "compile": [
+          "python",
+          "-m",
+          "compileall",
+          "-q",
+          "."
+        ]
+      }
+    },
+    {
+      "id": "orchestrator-pilot",
+      "path": "workspaces/orchestrator-pilot",
+      "description": "Sanitized Git-backed copy of the real Home AI orchestrator source; no production deployment path",
+      "read": true,
+      "write": true,
+      "git": true,
+      "protected_paths": [
+        ".env",
+        "secrets",
+        "state",
+        "history",
+        "docker-compose.yml",
+        "docker-compose.override.yml"
+      ],
+      "ignored_paths": [
+        ".git",
+        "__pycache__",
+        ".pytest_cache"
+      ],
+      "commands": {
+        "unit": [
+          "env",
+          "HAI_THINK_CAPS_PROBE=0",
+          "python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-t",
+          "tests",
+          "-v"
+        ],
+        "compile": [
+          "python",
+          "-m",
+          "compileall",
+          "-q",
+          "."
+        ]
+      }
+    },
+    {
+      "id": "orchestrator-real",
+      "shared": true,
+      "path": "workspaces/orchestrator-real",
+      "description": "Git-backed working copy of HAI with guarded edits, tests and checkpoints. Canonical promotion and deployment use the separate admin-only self-deploy workflow and its human approvals; no direct production writes or remote Git.",
+      "read": true,
+      "write": true,
+      "git": true,
+      "protected_paths": [
+        ".env",
+        "secrets",
+        "state",
+        "history",
+        "backups",
+        "docker-compose.yml",
+        "docker-compose.override.yml"
+      ],
+      "ignored_paths": [
+        ".git",
+        "__pycache__",
+        ".pytest_cache"
+      ],
+      "commands": {
+        "unit": [
+          "env",
+          "HAI_THINK_CAPS_PROBE=0",
+          "python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-t",
+          "tests",
+          "-v"
+        ],
+        "compile": [
+          "python",
+          "-m",
+          "compileall",
+          "-q",
+          "."
+        ],
+        "runner-unit": [
+          "python",
+          "-c",
+          "import os,sys; os.chdir('coding-runner'); sys.path[:0]=[os.getcwd(), os.path.dirname(os.getcwd())]; import unittest; unittest.main(module=None, argv=['x','discover','-s','tests'])"
+        ]
+      }
+    },
+    {
+      "id": "tablet-intake-canonical",
+      "path": "workspaces/tablet-intake-canonical",
+      "description": "Canonical Git-backed Fellowship tablet-intake source. HAI may extend, test, checkpoint, and review intake profiles and runners; live Rigby deployment and destructive device operations remain separate production gates.",
+      "read": true,
+      "write": true,
+      "git": true,
+      "protected_paths": [
+        ".git",
+        ".env",
+        "secrets",
+        "state",
+        "backups",
+        "images"
+      ],
+      "ignored_paths": [
+        ".git",
+        "__pycache__",
+        ".pytest_cache",
+        "backups",
+        ".worktrees"
+      ],
+      "commands": {
+        "unit": [
+          "python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".",
+          "-p",
+          "test_*.py",
+          "-v"
+        ],
+        "compile": [
+          "python",
+          "-m",
+          "compileall",
+          "-q",
+          "."
+        ],
+        "shell-syntax": [
+          "bash",
+          "-n",
+          "build_golden.sh",
+          "drive_tablet_intake_root.sh",
+          "install_rigby_root.sh",
+          "provision_node_rigby.sh"
+        ],
+        "json": [
+          "python",
+          "-c",
+          "import json; [json.load(open(p, encoding='utf-8')) for p in ('profiles.json','roster.json','payload-manifest.json','intake-session-state.json')]; print('JSON_OK')"
+        ]
+      }
+    },
+    {
+      "id": "hai-scratch",
+      "shared": true,
+      "path": "workspaces/hai-scratch",
+      "description": "HAI's own scratch workspace in the shared co-working space (the workspace share) (one folder per job, e.g. jade39/): patches, notes, drafts and test scripts for work in progress. Nothing here is canonical; settled results go to the library, code to a real repo only through human review.",
+      "read": true,
+      "write": true,
+      "git": true,
+      "protected_paths": [
+        ".env",
+        "secrets"
+      ],
+      "ignored_paths": [
+        ".git",
+        "__pycache__",
+        ".pytest_cache"
+      ],
+      "commands": {
+        "unit": [
+          "python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".",
+          "-p",
+          "test_*.py",
+          "-v"
+        ],
+        "compile": [
+          "python",
+          "-m",
+          "compileall",
+          "-q",
+          "."
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# Shell scripts run under bash on Linux (Sundae, rigby): a CRLF checkout breaks them (2026-11-14)
+*.sh text eol=lf

@@ -1,0 +1,207 @@
+{
+ "mothership/qwen3.6:35b-a3b/vlm/*": "2026-10-02 the owner ('we want 2x vision'): 1x vision is VOID BY METHOD for this model - its 1x prompts read ~183 tokens (the image never registers; qwen3-vl:8b reads ~1,110), the same signature the owner ruled void for the 27Bs' 1x rows; its 2x cells are the vision test",
+ "mothership/qwen3.8:27b/vlm/*": "2026-10-02 the owner ('we want 2x vision'): 1x vision is void by method for the 27Bs (the owner's earlier ruling: images of ~175 prompt tokens); the 2x cells are the vision test",
+ "bighonker/qwen3.5:9b/vlm/*": "2026-10-02 the owner ('we want 2x vision'): 1x vision void by method (the Softserve review's D5: same ~175-token signature as the 27Bs); 2x is the vision test",
+ "softserve/qwen3.5:9b/vlm/*": "2026-10-02 the owner ('we want 2x vision'): 1x vision void by method (Softserve review D5: same ~175-token signature as the 27Bs); 2x is the vision test",
+ "bighonker/huihui_ai/qwen3-vl-abliterated:8b": "2026-10-02 the owner: price specialists only for what we would use them for ('not EVERYTHING under the sun') - huihui is the P20 caption-mode model; its price is a captioning family, not coding/tool/vision quizzes",
+ "bighonker/aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M": "2026-10-02 the owner: specialists priced only on their real job - joycaption is the P20 dataset captioner; its price is a captioning family",
+ "bighonker/ii-medical:8b-q4km": "2026-11-06 the owner (\"hold and cancel\"): specialists priced only on their real job (his 10-02 rule, as medgemma above) - II-Medical 8B is on test as the lead's medical review tool, installed by hand; its price is a medical family",
+ "bighonker/hf.co/Intelligent-Internet/II-Medical-8B-1706-GGUF:Q4_K_M": "2026-11-06 the owner (\"hold and cancel\"): specialists priced only on their real job (his 10-02 rule, as medgemma above) - II-Medical 8B is on test as the lead's medical review tool, installed by hand; its price is a medical family",
+ "bighonker/medgemma:4b": "2026-10-02 the owner: specialists priced only on their real job - medgemma is the medical model (nursing tutor's critique); its price is a medical family",
+ "softserve/aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M": "2026-10-02 the owner: specialists priced only on their real job - joycaption is the P20 dataset captioner; its price is a captioning family",
+ "softserve/medgemma:4b": "2026-10-02 the owner: specialists priced only on their real job - medgemma is the medical model (nursing tutor's critique); its price is a medical family",
+ "mothership/huihui_ai/qwen3-vl-abliterated:8b": "2026-10-02 the owner: specialists priced only on their real job - huihui is the P20 caption-mode model; its price is a captioning family",
+ "mothership/huihui_ai/qwen3-vl-abliterated:32b-instruct": "2026-10-02 the owner: specialists priced only on their real job - abliterated vision model for captioning; its price is a captioning family",
+ "mothership/aha2025/llama-joycaption-beta-one-hf-llava:Q8_0": "2026-10-02 the owner: specialists priced only on their real job - joycaption is the P20 dataset captioner; its price is a captioning family",
+ "mothership/medgemma:27b": "2026-10-02 the owner: specialists priced only on their real job - medgemma:27b is the nursing tutor's medical critique (NURSING_CRITIQUE_MODEL); its price is a medical family",
+ "mothership/qwen3.8-flash-next:q2k": "2026-09-29 the owner: Flash-Next is pre-preliminary - no full menu for it yet (re-pointed 2026-10-02 from the retired q4_K_M tag, which matched no cell)",
+ "mothership/qwen3.8-flash-next:q2mix": "2026-09-29 the owner: Flash-Next is pre-preliminary - no full menu for it yet; this cook is ruled out and on the owner's delete list (2026-10-02)",
+ "mothership/qwen3.8:27b-mtp-q4_K_M": "2026-10-02 duplicate: the SAME weights as qwen3.8:27b (ollama digest 22130167c4c2 on both tags); its delivered rows match qwen3.8:27b within noise (f1 1.000 vs 1.000, f2 0.973 vs 0.979, tool 1.000 vs 1.000) - a second name measures nothing new. qwen3.8:27b stays the champion/control (34-CHARTER s10).",
+ "mothership/qwen3.6:27b": "2026-10-02 the owner (Mothership measures the lab's frontier 3.8 + helpers that win on price; same-tier models the 3.8 beats are dropped): beaten on this box, no fallback value on the same card - 3.8 vs 3.6: f1 1.000 @1.9 s vs 1.000 @3.0 s, f2 0.979 @1.4 vs 1.000 @1.9, vlm 0.889 @0.7 vs 0.528 @1.1, vlm2x 1.000 @2.7 vs 1.000 @11.2; beaten in actual lab work 2026-09-29 (34-CHARTER s10, Phase 5 audit 1/18 vs 3/18)",
+ "mothership/qwen3:14b": "2026-10-02 the owner (same rule): beaten on this box by the helpers that stay - f1 0.970 @1.3 s vs qwen3-coder:30b 1.000 @0.8; f2 0.973 @0.8 vs 1.000 @0.5; tool 0.958 @0.4 vs qwen3-vl:8b 1.000 @0.3; no fallback value on the same card",
+ "bighonker/qwen3.5:35b": "2026-10-02 the owner: not running the 35B on BigHonker - only models that fit, 8B class",
+ "bighonker/qwen3.5:9b/f1/on": {
+  "why": "2026-10-02 stop rule (cannot fit): 143 of 330 answers (43%) across 10 delivered orders end at the 7,168 tested max on this card; the cap is the card's limit, so no un-void re-run exists here [34-BigHonker-Menu-Review-20261002]"
+ },
+ "bighonker/qwen3.5:9b/f2/on": {
+  "why": "2026-10-02 stop rule (cannot fit): 211 of 675 answers (31%) across 9 delivered orders end at the 7,168 tested max on this card [34-BigHonker-Menu-Review-20261002]"
+ },
+ "bighonker/qwen3-vl:8b/f1/*": {
+  "why": "2026-10-02 stop rule (cannot fit): off and on are the same thinking run (the model ignores think:false); 20 of 33 (off) and 18 of 33 (on) answers end at the 5,120 tested max on this card [34-BigHonker-Menu-Review-20261002]"
+ },
+ "bighonker/qwen3-vl:8b/f2/*": {
+  "why": "2026-10-02 stop rule (cannot fit): off and on are the same thinking run (the model ignores think:false); 20 of 75 (off) and 22 of 75 (on) answers end at the 5,120 tested max on this card [34-BigHonker-Menu-Review-20261002]"
+ },
+ "bighonker/qwen3:8b/f1/on": {
+  "why": "2026-10-02 PRELIMINARY price-out (27x the off arm's joules, 32 s vs 1.3 s per answer) from ONE delivered cell on this box: held except the one repeat cell (t0.6, seed set 4), which carries the price line. When it reproduces, delete 'except' (arm stopped); if it does not, delete this hold [34-BigHonker-Menu-Review-20261002]",
+  "except": [
+   "0.6/4"
+  ]
+ },
+ "bighonker/qwen3:8b/f2/on": {
+  "why": "2026-10-02 PRELIMINARY price-out (37x the off arm's joules, 26 s vs 0.9 s per answer) from ONE delivered cell on this box: held except the one repeat cell (t0.6, seed set 4), which carries the price line. When it reproduces, delete 'except' (arm stopped); if it does not, delete this hold [34-BigHonker-Menu-Review-20261002]",
+  "except": [
+   "0.6/4"
+  ]
+ },
+ "softserve/qwen3.5:9b/f1/on": {
+  "why": "2026-10-02 stop rule (cannot fit): 175 of 353 answers (50%) across 11 delivered orders and one stopped order end at the 7,168 tested max on this card [34-Softserve-Menu-Review-20261002]"
+ },
+ "softserve/qwen3.5:9b/f2/on": {
+  "why": "2026-10-02 stop rule (cannot fit): 185 of 576 answers (32%) across 8 delivered orders end at the 7,168 tested max on this card [34-Softserve-Menu-Review-20261002]"
+ },
+ "softserve/qwen3-vl:8b/f1/*": {
+  "why": "2026-10-02 stop rule (cannot fit): the model ignores think:false, so off and on are the same thinking run; 23 of 30 answers (77%) end at the 5,120 tested max on this card [34-Softserve-Menu-Review-20261002]"
+ },
+ "softserve/qwen3-vl:8b/f2/*": {
+  "why": "2026-10-02 stop rule (cannot fit): the model ignores think:false, so off and on are the same thinking run; 25 of 72 answers (35%) end at the 5,120 tested max on this card [34-Softserve-Menu-Review-20261002]"
+ },
+ "softserve/qwen3:8b/f1/on": {
+  "why": "2026-10-02 PRELIMINARY price-out (50x the off arm's joules, 53 s vs 1.4 s per answer) from ONE delivered cell on this box: held except the one repeat cell (t0.6, seed set 4), which carries the price line. When it reproduces, delete 'except' (arm stopped); if it does not, delete this hold [34-Softserve-Menu-Review-20261002]",
+  "except": [
+   "0.6/4"
+  ]
+ },
+ "softserve/qwen3:8b/f2/on": {
+  "why": "2026-10-02 PRELIMINARY price-out (33x the off arm's joules, 22 s vs 1.0 s per answer) from ONE delivered cell on this box: held except the one repeat cell (t0.6, seed set 4), which carries the price line. When it reproduces, delete 'except' (arm stopped); if it does not, delete this hold [34-Softserve-Menu-Review-20261002]",
+  "except": [
+   "0.6/4"
+  ]
+ },
+ "rigby/Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf/f1/on": {
+  "why": "2026-10-02 stop rule (priced out on two families, f1 here and f2 below, reproduced on a second seed set on rigby): 240 of 240 answers priced out across 8 delivered cells and two seed sets; the same weights with thinking off solve f1 at 1.000 in 20.7 s per solve [34-Rigby-Menu-Review-20261002]"
+ },
+ "rigby/Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf/f2/on": {
+  "why": "2026-10-02 stop rule (priced out on two families, f2 here and f1 above, reproduced on a second seed set on rigby): 483 of 507 answers priced out across 8 delivered cells and two seed sets (24 solved, all correct); thinking off solves f2 at 0.997 in 11.9 s per solve [34-Rigby-Menu-Review-20261002]"
+ },
+ "mothership/qwen3-vl:8b/w1/*": "2026-10-03 the owner ('Hit it baby', on the W1 plan): qwen3-vl:8b thinks even with think:false, and on W1 its thinking runs into the context - BigHonker measured 26 of 35 W1 answers ending at its 5,120 context with no answer produced; on Mothership (222,208 context) the first W1 answer streamed 100k+ chunks for 47 min and was stopped. A behaviour of the model, not of the box, so it transfers; running it would burn hours to confirm void rows",
+ "mothership/qwen3.5:9b/vlm/*": "2026-10-03: 1x vision void by method for the Qwen 3.5 family (the owner 2026-10-02 'we want 2x vision'); this extends the 8 GB boxes' qwen3.5:9b ruling to Mothership, where the model was pulled 2026-10-02 ~23:00",
+ "bighonker/qwen3-vl:8b/w1/*": "2026-10-03 (the owner's W1 ruling on qwen3-vl, measured on this hardware class): BigHonker's first W1 cell had 26 of 35 answers end at the 5,120 context with no answer - the model thinks despite think:false; Softserve runs the same model at the same 5,120 context",
+ "softserve/qwen3-vl:8b/w1/*": "2026-10-03 (the owner's W1 ruling on qwen3-vl, measured on this hardware class): BigHonker's first W1 cell had 26 of 35 answers end at the 5,120 context with no answer - the model thinks despite think:false; Softserve runs the same model at the same 5,120 context",
+ "mothership/qwen3-vl:8b/c1/*": "2026-10-03 (the owner: \"we can call this a failure\"): qwen3-vl:8b ignores think:false and thinks without end - Mothership's first C1 cell streamed ~62k tokens on its second answer in 17 min against a 222,208 tested context, the same runaway that put */qwen3-vl:8b/w1/* on hold; the 8 GB boxes' 5,120 context bounds it, so C1 is measured there",
+ "bighonker/glm-ocr:q8_0": "2026-10-03 the owner (the 10-02 specialist ruling): GLM-OCR is a document/OCR specialist - priced only on an OCR/document family, never on the generic cells",
+ "softserve/glm-ocr:q8_0": "2026-10-03 the owner (the 10-02 specialist ruling): GLM-OCR is a document/OCR specialist - priced only on an OCR/document family, never on the generic cells",
+ "mothership/hf.co/bartowski/nvidia_Nemotron-3-Nano-30B-A3B-GGUF:IQ4_XS": "2026-10-03: superseded by a configured tag with the vendor generation_config sampling (this raw hf.co pull carries Ollama defaults incl. repeat_penalty 1.1) - never priced under this name",
+ "mothership/hf.co/AtomicChat/Ornith-1.5-35B-A3B-GGUF:Q4_K_M": "2026-10-03: superseded by a configured tag with the vendor generation_config sampling (this raw hf.co pull carries Ollama defaults incl. repeat_penalty 1.1) - never priced under this name",
+ "bighonker/hf.co/openbmb/MiniCPM-V-4.6-gguf:Q4_K_M": "2026-10-03: superseded by a configured tag with the vendor generation_config sampling (this raw hf.co pull carries Ollama defaults incl. repeat_penalty 1.1) - never priced under this name",
+ "bighonker/hf.co/openbmb/MiniCPM5-1B-gguf:Q4_K_M": "2026-10-03: superseded by a configured tag with the vendor generation_config sampling (this raw hf.co pull carries Ollama defaults incl. repeat_penalty 1.1) - never priced under this name",
+ "softserve/hf.co/openbmb/MiniCPM-V-4.6-gguf:Q4_K_M": "2026-10-03: superseded by a configured tag with the vendor generation_config sampling (this raw hf.co pull carries Ollama defaults incl. repeat_penalty 1.1) - never priced under this name",
+ "softserve/hf.co/openbmb/MiniCPM5-1B-gguf:Q4_K_M": "2026-10-03: superseded by a configured tag with the vendor generation_config sampling (this raw hf.co pull carries Ollama defaults incl. repeat_penalty 1.1) - never priced under this name",
+ "bighonker/minicpm-v:4.6-q4km/w1/on": "2026-10-04 the owner (\"a helper model running for 2.6 hours is its own indicator\"): FINAL-ANSWER verdict only - MiniCPM-V 4.6 one-shot W1 with thinking on is priced out on this 8 GB class (BigHonker w1-t00-on: 18/72 right in 117 min of answers, one 46-min answer to the full 262,144 context, 11 loops; thinking-off 15-21/72 in 2-5 min; qwen3:8b off 27-33/72 in 3-7 min). Its SUB-AGENT value is unmeasured and is not judged here (34-CHARTER: an arm is not culled for failing alone; the helper test is the S10 shapes, specialists priced on their real job)",
+ "softserve/minicpm-v:4.6-q4km/w1/on": "2026-10-04 the owner (\"a helper model running for 2.6 hours is its own indicator\"): FINAL-ANSWER verdict only - MiniCPM-V 4.6 one-shot W1 with thinking on is priced out on this 8 GB class (BigHonker w1-t00-on: 18/72 right in 117 min of answers, one 46-min answer to the full 262,144 context, 11 loops; thinking-off 15-21/72 in 2-5 min; qwen3:8b off 27-33/72 in 3-7 min). Its SUB-AGENT value is unmeasured and is not judged here (34-CHARTER: an arm is not culled for failing alone; the helper test is the S10 shapes, specialists priced on their real job)",
+ "mothership/gemma3:27b": "2026-10-04 the owner ('I think has officially told us that Gemma is doodoo'): stopped filling - dominated on its own box (W1 67% vs 81-94%, C1 81% vs 96-100%, ~43 tok/s vs 80-169 for the 3.8 / Ornith / Nemotron) and it fits only Mothership, so it has no fallback role; delivered rows stay on the menu",
+ "mothership/qwen3.8:27b/*/xhigh": "2026-10-07 the owner ('pretty much just refining it at this point… don't get stuck on the menu'): xhigh changes no family's best ONE-SHOT setting on Mothership (rebuilt menu 18:37); the 6 delivered vendor-temperature xhigh cells stay; agentic A1 xhigh arms unaffected",
+ "rigby/MiniCPM5-1B-Q4_K_M.gguf": {
+  "why": "2026-10-04 the owner ('think about what exactly we're aiming for as the end state with Rigby... we're not just blindly testing models'): rigby's one-shot grid has done its job - it named the lead/helper shortlist (Qwen3.6-35B-A3B thinking-off, Qwen2.5-14B, Coder-3B) and priced rigby's slow prompt reading. Its end-state roles (S10 lead, sub-agent to the 3.8, Phase 8 advisor) are measured in A1 / A1-team, not by more one-shot cells. Lane held; delivered rows stay on the menu.",
+  "orders_only": true
+ },
+ "rigby/Nemotron-3-Nano-4B-Q4_K_M.gguf": {
+  "why": "2026-10-04 the owner ('think about what exactly we're aiming for as the end state with Rigby... we're not just blindly testing models'): rigby's one-shot grid has done its job - it named the lead/helper shortlist (Qwen3.6-35B-A3B thinking-off, Qwen2.5-14B, Coder-3B) and priced rigby's slow prompt reading. Its end-state roles (S10 lead, sub-agent to the 3.8, Phase 8 advisor) are measured in A1 / A1-team, not by more one-shot cells. Lane held; delivered rows stay on the menu.",
+  "orders_only": true
+ },
+ "rigby/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf": {
+  "why": "2026-10-04 the owner ('think about what exactly we're aiming for as the end state with Rigby... we're not just blindly testing models'): rigby's one-shot grid has done its job - it named the lead/helper shortlist (Qwen3.6-35B-A3B thinking-off, Qwen2.5-14B, Coder-3B) and priced rigby's slow prompt reading. Its end-state roles (S10 lead, sub-agent to the 3.8, Phase 8 advisor) are measured in A1 / A1-team, not by more one-shot cells. Lane held; delivered rows stay on the menu.",
+  "orders_only": true
+ },
+ "rigby/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf": {
+  "why": "2026-10-04 the owner ('think about what exactly we're aiming for as the end state with Rigby... we're not just blindly testing models'): rigby's one-shot grid has done its job - it named the lead/helper shortlist (Qwen3.6-35B-A3B thinking-off, Qwen2.5-14B, Coder-3B) and priced rigby's slow prompt reading. Its end-state roles (S10 lead, sub-agent to the 3.8, Phase 8 advisor) are measured in A1 / A1-team, not by more one-shot cells. Lane held; delivered rows stay on the menu.",
+  "orders_only": true
+ },
+ "rigby/Qwen2.5-14B-Instruct-Q4_K_M.gguf": {
+  "why": "2026-10-04 the owner ('think about what exactly we're aiming for as the end state with Rigby... we're not just blindly testing models'): rigby's one-shot grid has done its job - it named the lead/helper shortlist (Qwen3.6-35B-A3B thinking-off, Qwen2.5-14B, Coder-3B) and priced rigby's slow prompt reading. Its end-state roles (S10 lead, sub-agent to the 3.8, Phase 8 advisor) are measured in A1 / A1-team, not by more one-shot cells. Lane held; delivered rows stay on the menu.",
+  "orders_only": true
+ },
+ "rigby/Qwen2.5-7B-Instruct-Q4_K_M.gguf": {
+  "why": "2026-10-04 the owner ('think about what exactly we're aiming for as the end state with Rigby... we're not just blindly testing models'): rigby's one-shot grid has done its job - it named the lead/helper shortlist (Qwen3.6-35B-A3B thinking-off, Qwen2.5-14B, Coder-3B) and priced rigby's slow prompt reading. Its end-state roles (S10 lead, sub-agent to the 3.8, Phase 8 advisor) are measured in A1 / A1-team, not by more one-shot cells. Lane held; delivered rows stay on the menu.",
+  "orders_only": true
+ },
+ "rigby/Qwen2.5-Coder-0.5B-Instruct-Q4_K_M.gguf": {
+  "why": "2026-10-04 the owner ('think about what exactly we're aiming for as the end state with Rigby... we're not just blindly testing models'): rigby's one-shot grid has done its job - it named the lead/helper shortlist (Qwen3.6-35B-A3B thinking-off, Qwen2.5-14B, Coder-3B) and priced rigby's slow prompt reading. Its end-state roles (S10 lead, sub-agent to the 3.8, Phase 8 advisor) are measured in A1 / A1-team, not by more one-shot cells. Lane held; delivered rows stay on the menu.",
+  "orders_only": true
+ },
+ "rigby/Qwen2.5-Coder-1.5B-Instruct-Q4_K_M.gguf": {
+  "why": "2026-10-04 the owner ('think about what exactly we're aiming for as the end state with Rigby... we're not just blindly testing models'): rigby's one-shot grid has done its job - it named the lead/helper shortlist (Qwen3.6-35B-A3B thinking-off, Qwen2.5-14B, Coder-3B) and priced rigby's slow prompt reading. Its end-state roles (S10 lead, sub-agent to the 3.8, Phase 8 advisor) are measured in A1 / A1-team, not by more one-shot cells. Lane held; delivered rows stay on the menu.",
+  "orders_only": true
+ },
+ "rigby/Qwen2.5-Coder-3B-Instruct-Q4_K_M.gguf": {
+  "why": "2026-10-04 the owner ('think about what exactly we're aiming for as the end state with Rigby... we're not just blindly testing models'): rigby's one-shot grid has done its job - it named the lead/helper shortlist (Qwen3.6-35B-A3B thinking-off, Qwen2.5-14B, Coder-3B) and priced rigby's slow prompt reading. Its end-state roles (S10 lead, sub-agent to the 3.8, Phase 8 advisor) are measured in A1 / A1-team, not by more one-shot cells. Lane held; delivered rows stay on the menu.",
+  "orders_only": true
+ },
+ "rigby/Qwen3.5-0.8B-Q4_K_M.gguf": {
+  "why": "2026-10-04 the owner ('think about what exactly we're aiming for as the end state with Rigby... we're not just blindly testing models'): rigby's one-shot grid has done its job - it named the lead/helper shortlist (Qwen3.6-35B-A3B thinking-off, Qwen2.5-14B, Coder-3B) and priced rigby's slow prompt reading. Its end-state roles (S10 lead, sub-agent to the 3.8, Phase 8 advisor) are measured in A1 / A1-team, not by more one-shot cells. Lane held; delivered rows stay on the menu.",
+  "orders_only": true
+ },
+ "rigby/Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf": {
+  "why": "2026-10-04 the owner ('think about what exactly we're aiming for as the end state with Rigby... we're not just blindly testing models'): rigby's one-shot grid has done its job - it named the lead/helper shortlist (Qwen3.6-35B-A3B thinking-off, Qwen2.5-14B, Coder-3B) and priced rigby's slow prompt reading. Its end-state roles (S10 lead, sub-agent to the 3.8, Phase 8 advisor) are measured in A1 / A1-team, not by more one-shot cells. Lane held; delivered rows stay on the menu.",
+  "orders_only": true
+ },
+ "rigby/Qwen3.6-35B-A3B-MTP-UD-Q3_K_XL.gguf/*/on": {
+  "why": "2026-10-15 #36 re-pricing: the role (S10 lead / A1) runs the A3B thinking OFF - the 10-04 shortlist; thinking-on is not the role (test the role, not the grid)"
+ },
+ "softserve/nimble:9b-q4_K_M": {
+  "why": "2026-10-16 Phase 8 decision-model candidate (the owner: 'Yep download'): measured on McCoy's gold rows through /v1/systemone, not priced as a generative menu model - held so the pull does not auto-enroll it (the 10-16 Mothership import queued 23 cells that way)."
+ },
+ "mothership/qwen3.6:35b-a3b-ud-q3kxl-mtp": {
+  "why": "2026-10-16 the owner ('Let's skip the menu fill for now'): rigby's MTP file imported into Mothership's ollama for the fair rigby-vs-Mothership A1 comparison; the import auto-enrolled it and the top-up queued 23 cells through ollama, which ignores the file's MTP head (speed rows would read ~20% low). Lift when the tuned setup is decided."
+ },
+ "bighonker/qwen3.6:35b-a3b-ud-q3kxl-mtp/f1/off": {
+  "why": "2026-10-18 the owner ('Yeah I think we should cut bh down'): Phase 3 is a ROLE question - is the A3B BigHonker's 8 GB seat, per family, vs qwen3:8b (34-CHARTER REOPENED: cost per correct answer per family). One priced row per family at its best setting is what placement uses; coding (100%% at 3 temps, thinking-on priced out) and W1 thinking-off (86-92%% at 3 temps) are decided. Open: W1 thinking-on (running), C1 + tool off at vendor 0.7 and on at 0.6. A second seed only where a family lands close to qwen3:8b.",
+  "orders_only": true
+ },
+ "bighonker/qwen3.6:35b-a3b-ud-q3kxl-mtp/f1/on": {
+  "why": "2026-10-18 the owner ('Yeah I think we should cut bh down'): Phase 3 is a ROLE question - is the A3B BigHonker's 8 GB seat, per family, vs qwen3:8b (34-CHARTER REOPENED: cost per correct answer per family). One priced row per family at its best setting is what placement uses; coding (100%% at 3 temps, thinking-on priced out) and W1 thinking-off (86-92%% at 3 temps) are decided. Open: W1 thinking-on (running), C1 + tool off at vendor 0.7 and on at 0.6. A second seed only where a family lands close to qwen3:8b.",
+  "orders_only": true
+ },
+ "bighonker/qwen3.6:35b-a3b-ud-q3kxl-mtp/f2/off": {
+  "why": "2026-10-18 the owner ('Yeah I think we should cut bh down'): Phase 3 is a ROLE question - is the A3B BigHonker's 8 GB seat, per family, vs qwen3:8b (34-CHARTER REOPENED: cost per correct answer per family). One priced row per family at its best setting is what placement uses; coding (100%% at 3 temps, thinking-on priced out) and W1 thinking-off (86-92%% at 3 temps) are decided. Open: W1 thinking-on (running), C1 + tool off at vendor 0.7 and on at 0.6. A second seed only where a family lands close to qwen3:8b.",
+  "orders_only": true
+ },
+ "bighonker/qwen3.6:35b-a3b-ud-q3kxl-mtp/f2/on": {
+  "why": "2026-10-18 the owner ('Yeah I think we should cut bh down'): Phase 3 is a ROLE question - is the A3B BigHonker's 8 GB seat, per family, vs qwen3:8b (34-CHARTER REOPENED: cost per correct answer per family). One priced row per family at its best setting is what placement uses; coding (100%% at 3 temps, thinking-on priced out) and W1 thinking-off (86-92%% at 3 temps) are decided. Open: W1 thinking-on (running), C1 + tool off at vendor 0.7 and on at 0.6. A second seed only where a family lands close to qwen3:8b.",
+  "orders_only": true
+ },
+ "bighonker/qwen3.6:35b-a3b-ud-q3kxl-mtp/w1/off": {
+  "why": "2026-10-18 the owner ('Yeah I think we should cut bh down'): Phase 3 is a ROLE question - is the A3B BigHonker's 8 GB seat, per family, vs qwen3:8b (34-CHARTER REOPENED: cost per correct answer per family). One priced row per family at its best setting is what placement uses; coding (100%% at 3 temps, thinking-on priced out) and W1 thinking-off (86-92%% at 3 temps) are decided. Open: W1 thinking-on (running), C1 + tool off at vendor 0.7 and on at 0.6. A second seed only where a family lands close to qwen3:8b.",
+  "orders_only": true
+ },
+ "bighonker/qwen3.6:35b-a3b-ud-q3kxl-mtp/w1/on": {
+  "why": "2026-10-18 the owner ('Yeah I think we should cut bh down'): Phase 3 is a ROLE question - is the A3B BigHonker's 8 GB seat, per family, vs qwen3:8b (34-CHARTER REOPENED: cost per correct answer per family). One priced row per family at its best setting is what placement uses; coding (100%% at 3 temps, thinking-on priced out) and W1 thinking-off (86-92%% at 3 temps) are decided. Open: W1 thinking-on (running), C1 + tool off at vendor 0.7 and on at 0.6. A second seed only where a family lands close to qwen3:8b.",
+  "except": [
+   "0.6/1"
+  ],
+  "orders_only": true
+ },
+ "bighonker/qwen3.6:35b-a3b-ud-q3kxl-mtp/c1/off": {
+  "why": "2026-10-18 the owner ('Yeah I think we should cut bh down'): Phase 3 is a ROLE question - is the A3B BigHonker's 8 GB seat, per family, vs qwen3:8b (34-CHARTER REOPENED: cost per correct answer per family). One priced row per family at its best setting is what placement uses; coding (100%% at 3 temps, thinking-on priced out) and W1 thinking-off (86-92%% at 3 temps) are decided. Open: W1 thinking-on (running), C1 + tool off at vendor 0.7 and on at 0.6. A second seed only where a family lands close to qwen3:8b.",
+  "except": [
+   "0.7/1"
+  ],
+  "orders_only": true
+ },
+ "bighonker/qwen3.6:35b-a3b-ud-q3kxl-mtp/c1/on": {
+  "why": "2026-10-18 the owner ('Yeah I think we should cut bh down'): Phase 3 is a ROLE question - is the A3B BigHonker's 8 GB seat, per family, vs qwen3:8b (34-CHARTER REOPENED: cost per correct answer per family). One priced row per family at its best setting is what placement uses; coding (100%% at 3 temps, thinking-on priced out) and W1 thinking-off (86-92%% at 3 temps) are decided. Open: W1 thinking-on (running), C1 + tool off at vendor 0.7 and on at 0.6. A second seed only where a family lands close to qwen3:8b.",
+  "except": [
+   "0.6/1"
+  ],
+  "orders_only": true
+ },
+ "bighonker/qwen3.6:35b-a3b-ud-q3kxl-mtp/tool/off": {
+  "why": "2026-10-18 the owner ('Yeah I think we should cut bh down'): Phase 3 is a ROLE question - is the A3B BigHonker's 8 GB seat, per family, vs qwen3:8b (34-CHARTER REOPENED: cost per correct answer per family). One priced row per family at its best setting is what placement uses; coding (100%% at 3 temps, thinking-on priced out) and W1 thinking-off (86-92%% at 3 temps) are decided. Open: W1 thinking-on (running), C1 + tool off at vendor 0.7 and on at 0.6. A second seed only where a family lands close to qwen3:8b.",
+  "except": [
+   "0.7/1"
+  ],
+  "orders_only": true
+ },
+ "bighonker/qwen3.6:35b-a3b-ud-q3kxl-mtp/tool/on": {
+  "why": "2026-10-18 the owner ('Yeah I think we should cut bh down'): Phase 3 is a ROLE question - is the A3B BigHonker's 8 GB seat, per family, vs qwen3:8b (34-CHARTER REOPENED: cost per correct answer per family). One priced row per family at its best setting is what placement uses; coding (100%% at 3 temps, thinking-on priced out) and W1 thinking-off (86-92%% at 3 temps) are decided. Open: W1 thinking-on (running), C1 + tool off at vendor 0.7 and on at 0.6. A second seed only where a family lands close to qwen3:8b.",
+  "except": [
+   "0.6/1"
+  ],
+  "orders_only": true
+ },
+ "rigby/Qwen3.8-27B-Q4_K_M.gguf": {
+  "why": "2026-10-18 the owner ('I guess skip', on pricing the 3.8 on BigHonker/rigby at ~1-2 tok/s): no more rigby cells for the 3.8. The filler auto-ordered f1 t0.0, f1 t0.6, f2 t0.0 at 18:38 because the file was copied into rigby's model store for a spot check; those delivered rows stay priced. The file was moved to ~/models-retired.",
+  "orders_only": true
+ },
+ "rigby/nomic-embed-text-v1.5-F16.gguf": "2026-10-23 22:4x Claude: NOT a chat / coding model - the embedding model HAI searches the library with, copied to rigby so Tolkien can PRICE EMBEDS (the embed family, Tolkien embed orders); it cannot answer a coding or chat prompt, and the filler had been submitting f1 orders for it every 15 min (0/30 in 0.1 min, a DM each). Whole model: no menu cell of any family."
+}

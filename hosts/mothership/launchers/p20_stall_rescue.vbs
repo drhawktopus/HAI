@@ -1,0 +1,1 @@
+CreateObject("Wscript.Shell").Run "cmd /c set FOUNDRY_ROOT=F:\foundry&& F:\ai-toolkit\venv\python.exe -u F:\ai-toolkit\p20_stall_rescue.py >> F:\foundry\var\state\telemetry\rescue_console.log 2>&1", 0, False

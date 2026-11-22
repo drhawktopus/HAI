@@ -1,0 +1,12 @@
+# The engine SOURCE TREES are derived: upstream releases (downloaded into _downloads) with the patches in patches/
+# applied by the engine pipeline. They are rebuilt, never edited, so they are not versioned here.
+/llama.cpp-*/
+/ollama-*-src/
+/strata-*/
+/_downloads/
+/diag/llama.cpp-*/
+__pycache__/
+*.pyc
+# backups beside a file are not a second version of it
+*.bak-*
+*.bak

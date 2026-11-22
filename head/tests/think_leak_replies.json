@@ -1,0 +1,19 @@
+{
+ "source": "eval de55ff2110f4 (qwen3.8:27b via HAI chat27b), 2026-09-26",
+ "leaked": [
+  {
+   "id": "coding-02",
+   "answer": "{\"verdict\":\"correct_but_misgraded\",\"reason\":\"fizzbuzz(15)[-1] is 'Buzz' for the small model's correct-otherwise branch logic, failing the explicit grader check fizzbuzz(15)[-1]=='FizzBuzz', so the grader is right to mark it wrong.\"}\n</think>\n\n{\"verdict\":\"correct_but_misgraded\",\"reason\":\"fizzbuzz(15)[-1] is 'Buzz' for the small model's correct-otherwise branch logic, failing the explicit grader check fizzbuzz(15)[-1]=='FizzBuzz', so the grader is right to mark it wrong.\"}"
+  },
+  {
+   "id": "coding-10",
+   "answer": "The notes are off-topic, but the audit itself is easy to verify by reasoning plus the code shown. The function returns `{}` for `parse_kv('')`? Wait, actually for empty string, `s.split(',')` returns `['']`, then `kv.split('=')` returns `['']` (a list with one element). Unpacking `k, v = ['']` raises ValueError: not enough values to unpack. So the second check fails with an exception, not returns `{}`. The first and third pass? For `'a=1,b=2'`, it returns correct dict. For `'x=hello'`, correct. Thus the grader is correct that answer fails because the empty-string check raises ValueError. Need decide category. It's a genuine error in answer, not grader wrong. Need maybe the question says automatic grader marked WRONG; decide why. Since code genuinely fails expectation. Need return JSON only. Need maybe mention specific check: `parse_kv('')=={}` fails because unpacking `['']` raises `ValueError`. Need ensure only JSON. Could use \"genuine_error\". Reason one sentence. We don't need tool result, but we did verify by reasoning. Should we have actually run? The instruction says if we claim tool result need tool result; we don't need to. But maybe need be precise. The code:\ndef parse_kv(s): return {k:v for k,v in (kv.split('=') for kv in s.split(','))}\nFor s='', split(',') => ['']. split('=') => ['']. unpack error. Yes.\n\nNeed final only JSON object. Ensure no extra whitespace? JSON:\n{\"verdict\":\"genuine_error\",\"reason\":\"parse_kv('')=={} fails because ''.split(',') yields [''], and unpacking ''.split('=') into k,v raises ValueError instead of returning an empty dict.\"}\n</think>\n\n{\"verdict\":\"genuine_error\",\"reason\":\"parse_kv('')=={} fails because ''.split(',') yields [''], and unpacking ''.split('=') into k,v raises ValueError instead of returning an empty dict.\"}"
+  }
+ ],
+ "clean": [
+  {
+   "id": "coding-01",
+   "answer": "{\"verdict\": \"genuine_error\", \"reason\": \"The check fact(0)==1 fails because the answer's base case is n==1, so fact(0) recurses to fact(-1) and infinitely instead of returning 1.\"}"
+  }
+ ]
+}

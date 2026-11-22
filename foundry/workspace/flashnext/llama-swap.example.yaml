@@ -1,0 +1,35 @@
+# llama-swap on the AMD box: Flash-Next (Strata) on demand for live work. The box's own copy is llama-swap.yaml beside
+# this file (its python, its foundry folder, its address); this is its shape. Strata's own guide: docs\LLAMA_SWAP.md.
+# The "Llama-swap Serve" task (install_llama_swap_task.ps1) points --config at that copy and watches it.
+# ollama stays the box's server for every other model: strata_serve.py run unloads ollama's models before Strata
+# loads, and HAI's client frees Strata (POST /api/models/unload) before it sends the card an ollama model.
+
+# llama-swap cannot turn its load timeout off, so it is set where it never decides anything (one day): a load is
+# governed by STATUS - strata_serve.py waits while Strata's process lives (it exits, and llama-swap sees it, the moment
+# Strata dies), HAI's silence watch reads llama-swap's "starting", and a Stop ends the call. Loads take 30-36 s warm.
+healthCheckTimeout: 86400
+logLevel: info
+# loading notices would be written into the answer's thinking field and recorded as the model's own
+sendLoadingState: false
+# llama-swap's wait for `cmdStop` (strata_serve.py stop: Strata's own unload, then the tree is ended with
+# taskkill /F) - the same one-day setting, so the stop command's own completion decides
+unloadTimeout: 86400
+
+models:
+  "qwen3.8-flash-next-strata-q2_0":
+    cmd: >-
+      <python.exe>
+      <FOUNDRY_ROOT>\workspace\flashnext\strata_serve.py run
+      <FOUNDRY_ROOT>\workspace\flashnext\plans\<the serving plan>.json
+    cmdStop: >-
+      <python.exe>
+      <FOUNDRY_ROOT>\workspace\flashnext\strata_serve.py stop
+      <FOUNDRY_ROOT>\workspace\flashnext\plans\<the serving plan>.json ${PID}
+    # the plan fixes Strata's port (8080, the same one factory orders use - so the two can never both serve)
+    proxy: "http://127.0.0.1:8080"
+    checkEndpoint: /health
+    env:
+      # the Host names Strata answers to: this box's name, localhost, and the address HAI reaches it by
+      - "STRATA_ALLOWED_HOSTS=<this box's name>,localhost,<this box's address>"
+    # the same idle rule as the box's ollama (OLLAMA_KEEP_ALIVE=5m): the model unloads after 5 minutes unused
+    ttl: 300

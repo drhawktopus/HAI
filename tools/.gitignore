@@ -1,0 +1,33 @@
+# Regenerable / build noise
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Active-workflow state that is not source
+/workspaces/
+/backups/
+
+# Local timestamped archives (they live on the Z: array, not in git)
+*.bak
+*.bak-*
+*.bak.*
+*.orig
+*.preclean-*
+
+# Secrets / credentials — never track, even locally
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+*.p12
+
+# Nightly #38 inventory: a growing store update_stage.py reads, not source (2026-11-14)
+/update-inventory/
+deploy-logs/
+
+# Run OUTPUT, kept on disk and not part of the lab (the owner, 2026-11-15): whole-network scans name every device in the house
+lansweep-dumps/
+capability-dumps/
+update-inventory/

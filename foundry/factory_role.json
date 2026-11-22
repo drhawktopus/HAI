@@ -1,0 +1,80 @@
+{
+  "about": "The factory role manifest: what a machine runs to be a HAI factory. setup_factory.py lays the code down under the factory root, writes its settings, writes one launcher per service and registers exactly these services as standing tasks (Windows) or units (Linux). Every service runs from <root>/bin with FOUNDRY_ROOT and FOUNDRY_FLEET_HOST set; the rest of its settings come from <root>/etc/lab.env (and the worker token from <root>/etc/dm_relay.env). A machine has one hardware SHAPE (--shape): a service names the shapes it belongs to (none named = every shape), an operating system it needs (os), and whether it drives the GPU (gpu_work), which on the amd shape makes it run as the logged-on user.",
+  "shapes": {
+    "nvidia": {"gpu_work_runs_as": "system",
+               "why": "CUDA works headless: every service runs as SYSTEM from startup."},
+    "amd": {"gpu_work_runs_as": "interactive",
+            "why": "ROCm on Windows needs the logged-on user's desktop session for the GPU, so a service that drives the GPU runs as that user, interactively, from logon (the box signs in on its own at boot: Autologon). The rest run as SYSTEM. On Linux the shape changes only which services run."}
+  },
+  "code": [
+    {"from": "foundry", "into": "bin", "why": "the factory's own modules (top level only)"},
+    {"from": "foundry/workspace", "into": "workspace", "recursive": true, "why": "the per-order payloads the factory runs"},
+    {"from": "foundry/hostscripts/ups_power_logger.py", "into": "bin"},
+    {"from": "tools/gpu_reporter.py", "into": "bin"},
+    {"from": "tools/gpu_load_reporter.py", "into": "bin"},
+    {"from": "tools/gpu_telemetry_logger_nvidia.ps1", "into": "bin"},
+    {"from": "tools/lab_settings.py", "into": "bin", "why": "the reporters' settings reader; LAB_SETTINGS_FILE points it at <root>/etc/lab.env"}
+  ],
+  "folders": ["bin", "etc", "var/log", "var/state/telemetry", "var/cache", "jobs/queue", "jobs/active", "jobs/archive", "jobs/state", "jobs/log", "output", "backup"],
+  "settings": {
+    "required": ["FOUNDRY_ROOT", "FOUNDRY_FLEET_HOST"],
+    "lab_env": ["HAI_URL", "OLLAMA_PORT"],
+    "secrets": ["P20_WORKER_TOKEN"],
+    "optional": ["FOUNDRY_PY", "FOUNDRY_COMFY_LAUNCH", "FOUNDRY_LORAS", "FOUNDRY_COMFY_OUTPUT", "FOUNDRY_RENDER_UNET", "FOUNDRY_AI_TOOLKIT", "FOUNDRY_TARGET_CLOCK", "OLLAMA_CONTEXT_LENGTH", "FOUNDRY_UPS_LOGGER", "FOUNDRY_GPU_POWER_LIMIT_W"]
+  },
+  "services": [
+    {"name": "order-taker", "kind": "daemon", "run": ["p20_foundry.py", "--queue"], "log": "var/log/foundry_queue.log",
+     "start_model_server": true, "gpu_work": true,
+     "why": "Takes orders from its own queue folder first and from the head's desk when one is linked (the factory contract)."},
+    {"name": "health", "kind": "daemon", "run": ["p20_health_daemon.py", "20"], "log": "var/state/telemetry/health_console.log",
+     "shapes": ["nvidia"],
+     "why": "The factory's health duties (card state, frozen telemetry, stalls); never reboots, never kills the order taker."},
+    {"name": "stall-rescue", "kind": "daemon", "run": ["p20_stall_rescue.py"], "log": "var/state/telemetry/rescue_console.log",
+     "shapes": ["amd"], "gpu_work": true, "only_if_setting": "FOUNDRY_AI_TOOLKIT",
+     "why": "The amd shape's health guard, in place of the health daemon: it watches a training run and rescues a stall with the trainer's own burst probe (p20_rescue_burst.py and the trainer's Python, in FOUNDRY_AI_TOOLKIT)."},
+    {"name": "stall-recorder", "kind": "daemon", "run": ["hai_stall_recorder.py"], "log": "var/log/hai_stall_recorder_console.log",
+     "shapes": ["amd"],
+     "why": "Records a stalled model-server runner (evidence first, then one message); never kills or restarts anything."},
+    {"name": "render-worker", "kind": "daemon", "run": ["p20_render_worker.py"], "log": "var/log/p20_render_worker_console.log",
+     "only_if_setting": "FOUNDRY_COMFY_LAUNCH", "gpu_work": true,
+     "why": "Only where a render toolchain is installed: a factory without one does not declare the render capability."},
+    {"name": "gpu-reporter", "kind": "every", "minutes": 1, "run": ["gpu_reporter.py"], "log": "var/log/gpu_reporter.log",
+     "why": "Pushes the card's alive/lost verdict from its own driver (the head cannot ask a remote driver)."},
+    {"name": "gpu-load-reporter", "kind": "every", "minutes": 1, "run": ["gpu_load_reporter.py"], "log": "var/log/gpu_load_reporter.log",
+     "why": "Pushes the card's use and power, so placement weighs a busy card as busy."},
+    {"name": "gpu-telemetry", "kind": "daemon", "run": ["gpu_telemetry_logger.ps1"], "log": "var/log/gpu_telemetry_logger.log",
+     "shapes": ["amd"], "os": "windows",
+     "why": "The card's telemetry, every few seconds, into var/state/telemetry/gpu_telemetry.csv: what the stall guards and the energy pricing read."},
+    {"name": "gpu-telemetry", "kind": "daemon", "run": ["gpu_telemetry_logger_nvidia.ps1"], "log": "var/log/gpu_telemetry_logger.log",
+     "shapes": ["nvidia"], "os": "windows",
+     "why": "The card's telemetry, every few seconds, into var/state/telemetry/gpu_telemetry.csv, from nvidia-smi."},
+    {"name": "ups-logger", "kind": "daemon", "run": ["ups_power_logger.py"], "log": "var/log/ups_power_logger.log",
+     "os": "windows", "only_if_setting": "FOUNDRY_UPS_LOGGER",
+     "why": "Where a USB UPS feeds this box (FOUNDRY_UPS_LOGGER=1): the whole box's power, into var/state/telemetry/ups_power.csv, so an order's energy counts the CPU too."},
+    {"name": "gpu-power-limit", "kind": "every", "minutes": 15, "run": ["nvidia-smi", "-pl", "{FOUNDRY_GPU_POWER_LIMIT_W}"],
+     "log": "var/log/gpu_power_limit.log", "shapes": ["nvidia"], "only_if_setting": "FOUNDRY_GPU_POWER_LIMIT_W",
+     "why": "Where a box's card needs a power cap (FOUNDRY_GPU_POWER_LIMIT_W, in watts): set again at startup and every 15 minutes, since a driver reset clears it."}
+  ],
+  "head": {
+    "compose": "examples/one-machine/docker-compose.yml", "settings_example": "settings.env.example",
+    "folders": ["library", "state", "state/secrets", "usercorpora"], "token": "state/secrets/worker_token",
+    "url": "http://localhost:8099",
+    "why": "The head (HAI itself: the chat, the desk, the placement) runs in a container from the one-machine compose file; its settings are settings.env beside it, and the worker token in its state folder is the one a factory reports with."
+  },
+  "installed_by_others": [
+    {"name": "HAI WU Stage", "by": "tools/update_stage.py",
+     "why": "The update stager writes wu_stage_box.ps1 into the box's folder and registers this task at each run, as SYSTEM and on demand; there is nothing to install here."},
+    {"name": "the model server", "by": "the engine's own installer",
+     "why": "The order taker starts ollama when it does not answer (start_model_server). On the amd shape the model server too must run as the logged-on user."}
+  ],
+  "tablet_head": {
+    "compose": "examples/tablet-head/docker-compose.yml", "settings_example": "tolkien.env.example", "settings": "tolkien.env",
+    "folders": ["secrets", "library"],
+    "host_installer": "fellowship/rigby/install_rigby_host_units.sh",
+    "host_installer_arg": "<folder>:<models user>:<models port>:<models dir>:<share>[,<share>...]",
+    "prerequisites": ["set up the tablets and their USB segment (fellowship/README.md: flash, provision, roster, bridge)",
+                      "put the tablets' ssh key at secrets/tabcluster_key (mode 0600, owned by root) and the fellows' shared token at secrets/fellow_token",
+                      "install the watchdog's USB reach probe (fellowship/install_usb_reach_probe.sh) and give its key the forced command it prints"],
+    "why": "The tablet head is the tablet factory (Tolkien, a factory with the tablets' desk): a Linux box running Tolkien's containers from the tablet-head compose file, and the host services the tablets need (the USB bridge daemon, the tablets' model store, the share mounter). No tablets is not an error: Tolkien reports none."
+  }
+}

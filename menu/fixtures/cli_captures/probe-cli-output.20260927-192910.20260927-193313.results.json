@@ -1,0 +1,142 @@
+{
+ "kind": "map.window",
+ "name": "probe-cli-output.20260927-192910",
+ "finished": "2026-09-27 19:33:13",
+ "wall_s": 33.3,
+ "n_arms": 1,
+ "n_usable_arms": 1,
+ "control_passed": true,
+ "complete": true,
+ "coverage": "1/1 arms usable",
+ "usable": true,
+ "VOID": false,
+ "stopped": false,
+ "arms": [
+  {
+   "name": "probe-cli-output.20260927-192910.arm",
+   "wall_s": 33.3,
+   "n_measured": 5,
+   "n_expected": 5,
+   "errors": {},
+   "control_passed": true,
+   "control": "control read: None",
+   "complete": true,
+   "coverage": "5/5 measured; distinct-worker PASS: 4/4 selected hosts observed",
+   "never_measured": [],
+   "usable": true,
+   "VOID": false,
+   "cohort": {
+    "requested_distinct_workers": 4,
+    "window_eligible_hosts": [
+     "aragorn",
+     "boromir",
+     "faramir",
+     "frodo",
+     "gandalf",
+     "gimli",
+     "legolas",
+     "merry",
+     "pippin",
+     "sam"
+    ],
+    "selected_hosts": [
+     "legolas",
+     "aragorn",
+     "boromir",
+     "pippin"
+    ],
+    "actual_hosts": [
+     "aragorn",
+     "boromir",
+     "legolas",
+     "pippin"
+    ],
+    "passed": true,
+    "detail": "distinct-worker PASS: 4/4 selected hosts observed"
+   },
+   "rows": [
+    {
+     "item": "probe~vlm~3",
+     "ok": false,
+     "ran": false,
+     "reason": "missing ['/data/data/com.termux/files/home/llm/SmolVLM2-500M-Video-Instruct-Q8_0.gguf']",
+     "_host": "pippin"
+    },
+    {
+     "item": "control",
+     "ok": true,
+     "control_result": "PROBE_CONTROL_PASS",
+     "_host": "pippin"
+    },
+    {
+     "item": "probe~tool~1",
+     "ok": true,
+     "rc": 0,
+     "wall_s": 17.4,
+     "stdout": "\n\nLoading model... |\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b \b\n\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588\u2588  \u2580\u2580\u2588\u2584 \u2588\u2588\u2588\u2584\u2588\u2588\u2588\u2584  \u2580\u2580\u2588\u2584    \u2584\u2588\u2588\u2588\u2588 \u2588\u2588\u2588\u2588\u2584 \u2588\u2588\u2588\u2588\u2584\n\u2588\u2588 \u2588\u2588 \u2584\u2588\u2580\u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2584\u2588\u2580\u2588\u2588    \u2588\u2588    \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588\u2588 \u2580\u2588\u2584\u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2580\u2588\u2584\u2588\u2588 \u2588\u2588 \u2580\u2588\u2588\u2588\u2588 \u2588\u2588\u2588\u2588\u2580 \u2588\u2588\u2588\u2588\u2580\n                                    \u2588\u2588    \u2588\u2588\n                                    \u2580\u2580    \u2580\u2580\n\nbuild      : b1-70adb1b\nmodel      : /data/data/com.termux/files/home/llm/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf\nftype      : Q4_K - Medium\nmodalities : text\n\navailable commands:\n  /exit or Ctrl+C     stop or exit\n  /regen              regenerate the last response\n  /clear              clear the chat history\n  /read <file>        add a text file\n  /glob <pattern>     add text files using globbing pattern\n\n\n\n> Restart the redis service. Respond with ONLY a JSON object {\"tool\": \"<name>\", \"arguments\": {...}}.\n{\n  \"tool\": \"restart_service\",\n  \"arguments\": {\n    \"service\": \"redis\"\n  }\n}\n\n[ Prompt: 9.3 t/s | Generation: 5.4 t/s ]\n\n\nExiting...\n",
+     "stderr": "",
+     "stdout_len": 1046,
+     "stderr_len": 0,
+     "stdout_head_repr": "'\\n\\nLoading model... |\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08 \\x08\\n\\n\u2584\u2584 \u2584\u2584\\n\u2588\u2588 \u2588\u2588\\n\u2588\u2588 \u2588\u2588  \u2580\u2580\u2588\u2584 \u2588\u2588\u2588\u2584\u2588\u2588\u2588\u2584  \u2580\u2580\u2588\u2584    \u2584\u2588\u2588\u2588\u2588 \u2588\u2588\u2588\u2588\u2584 \u2588\u2588\u2588\u2588\u2584\\n\u2588\u2588 \u2588\u2588 \u2584\u2588\u2580\u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2584\u2588\u2580\u2588\u2588    \u2588\u2588    \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588\\n\u2588\u2588 \u2588\u2588 \u2580\u2588\u2584\u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2580\u2588\u2584\u2588\u2588 \u2588\u2588 \u2580\u2588\u2588'",
+     "stdout_tail_repr": "'le\\n  /glob <pattern>     add text files using globbing pattern\\n\\n\\n\\n> Restart the redis service. Respond with ONLY a JSON object {\"tool\": \"<name>\", \"arguments\": {...}}.\\n{\\n  \"tool\": \"restart_service\",\\n  \"arguments\": {\\n    \"service\": \"redis\"\\n  }\\n}\\n\\n[ Prompt: 9.3 t/s | Generation: 5.4 t/s ]\\n\\n\\nExiting...\\n'",
+     "stderr_tail_repr": "''",
+     "ran": true,
+     "argv": [
+      "/data/data/com.termux/files/home/llm/llama-cli",
+      "-m",
+      "/data/data/com.termux/files/home/llm/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
+      "-f",
+      "/data/data/com.termux/files/home/llm/_probe_prompt.txt",
+      "--grammar-file",
+      "/data/data/com.termux/files/home/llm/_probe.gbnf",
+      "-st",
+      "--no-display-prompt",
+      "--temp",
+      "0.6",
+      "--seed",
+      "1",
+      "-n",
+      "-1",
+      "-c",
+      "2048",
+      "-t",
+      "8"
+     ],
+     "_host": "legolas"
+    },
+    {
+     "item": "probe~vlm~1",
+     "ok": true,
+     "rc": 0,
+     "wall_s": 27.5,
+     "stdout": "\n 42.\n\n\n",
+     "stderr": "0.02.793.595 I cmn          init: llama threadpool init, n_threads = 8\n0.02.960.188 W load_tensors: ffn up/down are swapped\n0.03.763.957 I mtmd_cli_context: chat template example:\n<|im_start|>You are a helpful assistant\n\nUser: Hello<end_of_utterance>\nAssistant: Hi there<end_of_utterance>\nUser: How are you?<end_of_utterance>\nAssistant:\n0.03.764.004 I main: loading model: /data/data/com.termux/files/home/llm/SmolVLM2-500M-Video-Instruct-Q8_0.gguf\n0.03.764.181 W WARN: This is an experimental CLI for testing multimodal capability.\n0.03.764.184 W       For normal use cases, please use the standard llama-cli\n0.04.190.736 I encoding mtmd batch, n_chunks = 1 (done = 1, total = 5)\n0.13.439.139 I mtmd batch encoding done in 9249 ms\n0.15.347.006 I encoding mtmd batch, n_chunks = 1 (done = 3, total = 5)\n0.24.565.271 I mtmd batch encoding done in 9218 ms\n",
+     "stdout_len": 8,
+     "stderr_len": 854,
+     "stdout_head_repr": "'\\n 42.\\n\\n\\n'",
+     "stdout_tail_repr": "'\\n 42.\\n\\n\\n'",
+     "stderr_tail_repr": "'For normal use cases, please use the standard llama-cli\\n0.04.190.736 I encoding mtmd batch, n_chunks = 1 (done = 1, total = 5)\\n0.13.439.139 I mtmd batch encoding done in 9249 ms\\n0.15.347.006 I encoding mtmd batch, n_chunks = 1 (done = 3, total = 5)\\n0.24.565.271 I mtmd batch encoding done in 9218 ms\\n'",
+     "ran": true,
+     "cmd": "cd /data/data/com.termux/files/home/llm && LD_LIBRARY_PATH=. ./llama-mtmd-cli -m /data/data/com.termux/files/home/llm/SmolVLM2-500M-Video-Instruct-Q8_0.gguf -mm /data/data/com.termux/files/home/llm/mmproj-SmolVLM2-500M-Video-Instruct-Q8_0.gguf --image /data/data/com.termux/files/home/vlm_set/n_number.png -p 'What number is shown? Answer with only the number.' -n 32 --temp 0.6 --seed 1 -c 2048 -t 8",
+     "_host": "aragorn"
+    },
+    {
+     "item": "probe~vlm~2",
+     "ok": true,
+     "rc": 0,
+     "wall_s": 28.4,
+     "stdout": "\n 42.\n\n\n",
+     "stderr": "0.02.942.569 I cmn          init: llama threadpool init, n_threads = 8\n0.03.225.681 W load_tensors: ffn up/down are swapped\n0.04.078.725 I mtmd_cli_context: chat template example:\n<|im_start|>You are a helpful assistant\n\nUser: Hello<end_of_utterance>\nAssistant: Hi there<end_of_utterance>\nUser: How are you?<end_of_utterance>\nAssistant:\n0.04.078.776 I main: loading model: /data/data/com.termux/files/home/llm/SmolVLM2-500M-Video-Instruct-Q8_0.gguf\n0.04.078.943 W WARN: This is an experimental CLI for testing multimodal capability.\n0.04.078.948 W       For normal use cases, please use the standard llama-cli\n0.04.862.533 I encoding mtmd batch, n_chunks = 1 (done = 1, total = 5)\n0.13.981.820 I mtmd batch encoding done in 9119 ms\n0.15.891.494 I encoding mtmd batch, n_chunks = 1 (done = 3, total = 5)\n0.25.025.418 I mtmd batch encoding done in 9134 ms\n",
+     "stdout_len": 8,
+     "stderr_len": 854,
+     "stdout_head_repr": "'\\n 42.\\n\\n\\n'",
+     "stdout_tail_repr": "'\\n 42.\\n\\n\\n'",
+     "stderr_tail_repr": "'For normal use cases, please use the standard llama-cli\\n0.04.862.533 I encoding mtmd batch, n_chunks = 1 (done = 1, total = 5)\\n0.13.981.820 I mtmd batch encoding done in 9119 ms\\n0.15.891.494 I encoding mtmd batch, n_chunks = 1 (done = 3, total = 5)\\n0.25.025.418 I mtmd batch encoding done in 9134 ms\\n'",
+     "ran": true,
+     "cmd": "cd /data/data/com.termux/files/home/llm && LD_LIBRARY_PATH=. ./llama-mtmd-cli -m /data/data/com.termux/files/home/llm/SmolVLM2-500M-Video-Instruct-Q8_0.gguf -mm /data/data/com.termux/files/home/llm/mmproj-SmolVLM2-500M-Video-Instruct-Q8_0.gguf --image /data/data/com.termux/files/home/vlm_set/n_number.png -p 'What number is shown? Answer with only the number.' -n 32 --temp 0.6 --seed 1 -c 2048 -t 8",
+     "_host": "boromir"
+    }
+   ]
+  }
+ ]
+}

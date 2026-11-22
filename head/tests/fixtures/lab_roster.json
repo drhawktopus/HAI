@@ -1,0 +1,93 @@
+{
+  "about": "The devices this head places work on, one record per device. scheduler.py derives CARDS and every per-device table from these records; the box names in its code are role lookups (brain, failover, head, advisor, tolkien, acquisition); the lead is a seat a model holds, and the machine it sits on comes from the menu's crown. Physical machines are numbered PCs (`pc`) and a VM sits under its PC (`vm`); a device's machine settings are named PC<n>_<SETTING> (a VM's PC<n>_VM<m>_<SETTING>). `url_setting` names the head's setting that holds the device's model-server address. Each `why` keeps the reason a hand-set value has its value.",
+  "devices": [
+    {
+      "name": "mothership", "label": "Mothership", "pc": 1, "roles": [], "url_setting": "HEAVY_HOST",
+      "model_contexts": {"qwen3.6:27b": 151552, "qwen3.8:27b": 125952, "qwen3.6:35b-a3b": 84992, "qwen3-coder:30b": 107520, "medgemma:27b": 130048, "qwen3:14b": 40960, "qwen3-vl:8b": 221184, "gemma3:27b": 123904, "nemotron-3-nano:30b-iq4xs": 1048576, "ornith-1.5:35b-a3b-q4km": 223232, "qwen3.8-flash-next-strata-q2_0": 262144},
+      "aliases": ["mother", "heavy", "27"],
+      "gpu": "RX 7900 XTX", "vram_gb": 24.0, "ram_gb": 31.9, "cpu": 16,
+      "flags": {"big_jobs_only_above_gb": 8.0},
+      "ram_reserve_gb": 6.0, "cpu_busy_pct": 60.0, "chat_tier": 1,
+      "caption_s_per_img": 2.75, "caption_model": "aha2025/llama-joycaption-beta-one-hf-llava:Q8_0", "caption_workers": 4,
+      "compute_py": "F:\\ai-toolkit\\venv\\python.exe",
+      "triage_classify_s_per_row": 3.22, "triage_rewrite_s_per_section": 17.0,
+      "why": {
+        "big_jobs_only_above_gb": "The only card that fits the 27B or a 32B QLoRA. Reserve it for work only it can do.",
+        "ram_reserve_gb": "17 GB spills happen here; leave room or the box freezes.",
+        "caption_model": "24 GB: the full-precision model, and the reference arm for any quant comparison."
+      }
+    },
+    {
+      "name": "bighonker", "label": "BigHonker", "pc": 2, "roles": ["brain"], "url_setting": "BRAIN_HOST",
+      "model_contexts": {"qwen3:8b": 23552, "qwen3-vl:8b": 17408, "nemotron-3-nano:4b": 262144, "minicpm-v:4.6-q4km": 262144, "minicpm5:1b-q4km": 131072, "qwen3.6:35b-a3b-ud-q3kxl-mtp": 65536},
+      "window_gpu_clock": {"floor": 1965},
+      "gpu": "RTX 3070", "vram_gb": 8.0, "ram_gb": 15.9, "cpu": 6,
+      "flags": {"cpu_heavy_ok": false},
+      "ram_reserve_gb": 3.0, "cpu_busy_pct": 50.0, "chat_tier": 0,
+      "caption_s_per_img": 3.55, "caption_model": "aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M", "caption_workers": 4,
+      "compute_py": "F:\\comfy-bench\\venv\\Scripts\\python.exe",
+      "triage_classify_s_per_row": 1.82, "triage_rewrite_s_per_section": 7.4,
+      "why": {
+        "cpu_heavy_ok": "Weakest box: 6 cores. CPU-heavy work should avoid it even when its GPU is free.",
+        "chat_tier": "The chat default; its wake takes seconds, so wait it out before failing over.",
+        "window_gpu_clock": "A MoE decode with its experts in RAM (the A3B) runs bursty: the 3070 parks at ~450 MHz between bursts and writes 20.3-21.7 tok/s; held at 1965 MHz, the card's factory-boost floor, 25.3-26.6. A floor, not a lock, and only while a window serves; the box's 180 W power limit is untouched (the A3B at 1995 MHz drew ~115 W).",
+        "caption_model": "8 GB: Q8 exceeds memory with 4096 context; Q4_K_M used as equivalent fallback."
+      }
+    },
+    {
+      "name": "softserve", "label": "Softserve", "pc": 3, "roles": ["failover", "advisor", "acquisition"],
+      "url_setting": "FAILOVER_HOST", "dataset_root": "Z:\\Datasets",
+      "model_contexts": {"qwen3.5:9b": 47104, "qwen3-vl:8b": 17408, "qwen3:8b": 23552, "nemotron-3-nano:4b": 262144, "minicpm-v:4.6-q4km": 262144, "minicpm5:1b-q4km": 131072},
+      "aliases": ["soft", "plex", "failover"],
+      "gpu": "RTX 3070 Ti", "vram_gb": 8.0, "ram_gb": 47.3, "cpu": 16,
+      "flags": {"hosts_services": true, "cpu_heavy_ok": true},
+      "ram_reserve_gb": 4.0, "cpu_busy_pct": 40.0, "chat_tier": 2,
+      "caption_s_per_img": 5.1, "caption_model": "aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M", "caption_workers": 2,
+      "triage_classify_s_per_row": 1.06,
+      "order_deprioritize": 1,
+      "why": {
+        "hosts_services": "High RAM but hosts critical services (the head's VM, the media server). Never schedule heavy work that degrades them.",
+        "ram_reserve_gb": "Of what is genuinely FREE; the VM's share is already gone.",
+        "chat_tier": "Last resort for chat: the box everything else depends on.",
+        "caption_model": "Insufficient VRAM for the default factory captioner (qwen3-vl:8b); this entry forces the smaller model so it is never silently misconfigured.",
+        "caption_workers": "Lower than its peers because it also runs the media server and DNS; keeping its footprint light is a hard constraint, not a tuning suggestion.",
+        "compute_py": "Intentionally absent: no torch env. The factory's default interpreter is correct for stdlib payloads and fails loudly at import for torch ones.",
+        "order_deprioritize": "The media host takes fleet ORDERS only when no other x86 factory can.",
+        "roles": "The advisor (McCoy) lives here: it coexists with the media server in the transcode's buffer. It is also the acquisition host: its dataset agent builds sets onto the array, which is a local path there.",
+        "dataset_root": "Where a finished set lands when this box builds it: the array, local to it, so nothing needs a network share."
+      }
+    },
+    {
+      "name": "sundae", "label": "Sundae", "vm": 1, "roles": ["head"], "url": null,
+      "gpu": null, "vram_gb": 0.0, "ram_gb": 15.0, "cpu": 6,
+      "flags": {"cpu_heavy_ok": true, "hosts_services": true, "parent": "softserve", "container_env": true},
+      "ram_reserve_gb": 3.0, "cpu_busy_pct": 70.0,
+      "why": {
+        "parent": "A guest VM: its cores and RAM are carved from its parent. Do not schedule CPU work here unless it needs this VM's containers or libraries; the guest adds virtualization overhead for access to shared silicon."
+      }
+    },
+    {
+      "name": "rigby", "label": "rigby", "pc": 4, "roles": ["tolkien"],
+      "why": {
+        "roles": "The fourth GPU factory, run by Tolkien (rigby's factory: its own GTX 1060 lane, and the GT 730 that works in the Fellowship's tablet pool). Its work goes to it as Tolkien orders through its desk, so it is never a card the head places on directly."
+      }
+    }
+  ],
+  "tablets": [
+    {"name": "gandalf", "label": "gandalf", "cpu": 8, "ram_gb": 2.79, "gflops": 19.25},
+    {"name": "frodo", "label": "frodo", "cpu": 8, "ram_gb": 1.76, "gflops": 17.38},
+    {"name": "sam", "label": "sam", "cpu": 8, "ram_gb": 1.76, "gflops": 15.16},
+    {"name": "merry", "label": "merry", "cpu": 4, "ram_gb": 1.82, "gflops": 10.28},
+    {"name": "pippin", "label": "pippin", "cpu": 4, "ram_gb": 1.82, "gflops": 10.07},
+    {"name": "legolas", "label": "legolas", "cpu": 8, "ram_gb": 1.76, "gflops": 17.16,
+     "why": {"name": "Historically flaky connectivity; do not use for latency-sensitive work until stability is confirmed."}},
+    {"name": "aragorn", "label": "aragorn", "cpu": 8, "ram_gb": 2.79, "gflops": 18.92,
+     "why": {"name": "Gandalf-class hardware: 2.79 GB RAM, Android 12."}},
+    {"name": "smeagol", "label": "smeagol", "cpu": 4, "ram_gb": 1.39, "gflops": 0.0, "arch": "armv7l",
+     "runtime_bits": 32, "direct_cpu_eligible": false, "provisional": true,
+     "why": {"gflops": "32-bit runtime on 64-bit-capable silicon. No benchmark value is invented; direct arm64 payload placement stays fail-closed."}},
+    {"name": "gimli", "label": "gimli", "cpu": 8, "ram_gb": 1.76, "gflops": 17.27, "provisional": true},
+    {"name": "boromir", "label": "boromir", "cpu": 8, "ram_gb": 1.76, "gflops": 17.27, "provisional": true},
+    {"name": "faramir", "label": "faramir", "cpu": 8, "ram_gb": 1.76, "gflops": 17.27, "provisional": true}
+  ]
+}

@@ -1,0 +1,7 @@
+{
+ "_about": "The Fellowship tablets. Copy, fill in your own, and name the file in the FELLOWSHIP_ROSTER setting. address: the tablet's WiFi address (or its USB-segment address); serial: its adb serial; usb_octet: its address on the USB segment; class: A, B or C by capability; battery_switch: the sysfs or procfs file that turns charging on and off.",
+ "tablets": {
+  "tablet-1": {"address": "<tablet-1-address>", "serial": "<adb-serial>", "usb_octet": 11, "class": "A", "battery_switch": "/sys/class/power_supply/battery/charging_enable"},
+  "tablet-2": {"address": "<tablet-2-address>", "serial": "<adb-serial>", "usb_octet": 12, "class": "B", "battery_switch": "/proc/mtk_battery_cmd/en_power_path"}
+ }
+}

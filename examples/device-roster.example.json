@@ -1,0 +1,10 @@
+{
+  "about": "A device roster for a head with two machines: copy it to the head's state folder as device-roster.json (or name it in HAI_ROSTER_FILE) and edit it. One record per device. `roles` names what a device does (brain, failover, head, advisor, tolkien, acquisition); a GPU role no device claims falls to the brain. `url_setting` names the setting that holds the device's model-server address, never the address itself. `pc` numbers the physical machines. `vram_gb`, `ram_gb`, `cpu` (cores) and `gpu` describe the card, memory and processor the placement weighs; a device with a card needs all four and a `label`. Optional fields the lab's own roster also uses (its test fixture, head/tests/fixtures/lab_roster.json) are measured per machine: leave them out until you have measured yours. A clock setting for a card (`window_gpu_clock`) is the owner's own choice and nothing sets one by default.",
+  "devices": [
+    {"name": "pc-a", "label": "PC-A", "roles": ["head", "brain"], "url_setting": "BRAIN_HOST",
+     "gpu": "<this machine's card>", "vram_gb": 8.0, "ram_gb": 32.0, "cpu": 8, "pc": 1},
+    {"name": "pc-b", "label": "PC-B", "roles": [], "url_setting": "HEAVY_HOST",
+     "gpu": "<this machine's card>", "vram_gb": 24.0, "ram_gb": 64.0, "cpu": 16, "pc": 2}
+  ],
+  "tablets": []
+}

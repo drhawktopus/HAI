@@ -1,0 +1,95 @@
+{
+ "id": "0b679da8acee",
+ "kind": "factory_order",
+ "order_name": "hardbench-fleet-g-so-aha2025-llama-joycaption-beta-one-hf-f1-t03-off-s1-aha2025-llama-joycaption-beta-one-hf-llava-q4-k-.20261002-103856_softserve",
+ "spec": {
+  "name": "hardbench-fleet-g-so-aha2025-llama-joycaption-beta-one-hf-f1-t03-off-s1-aha2025-llama-joycaption-beta-one-hf-llava-q4-k-.20261002-103856_softserve",
+  "mode": "compute",
+  "load": "gpu",
+  "initiator": "ClaudeSupervisor",
+  "payload": "{FOUNDRY_ROOT}\\bin\\infer_ollama.py",
+  "args": [
+   "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20261002\\fleet-g-so-aha2025-llama-joycaption-beta-one-hf-f1-t03-off-s1\\items.20261002-103856.json",
+   "{ORDER_OUT}\\out.json",
+   "--model",
+   "aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M",
+   "--rounds",
+   "3",
+   "--num-ctx",
+   "6144",
+   "--temperature",
+   "0.3",
+   "--seed-base",
+   "1",
+   "--price-ceiling-s",
+   "16.0",
+   "--grade",
+   "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\payloads\\map_swarm_code_hard.py"
+  ],
+  "progress_glob": "{ORDER_OUT}\\out.progress\\*.done",
+  "progress_total": 33,
+  "deliver_to": "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20261002\\fleet-g-so-aha2025-llama-joycaption-beta-one-hf-f1-t03-off-s1",
+  "notify": "failures",
+  "caption_model": "aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M",
+  "caption_workers": 2,
+  "requires": [
+   "order.compute",
+   "model.aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M"
+  ],
+  "placed_by": "scheduler.compose_orders",
+  "placed_on": "softserve",
+  "pinned_to": [
+   "softserve"
+  ]
+ },
+ "requires": [
+  "order.compute",
+  "model.aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M"
+ ],
+ "rush": false,
+ "after_ids": [],
+ "step": "",
+ "host": "softserve",
+ "status": "claimed",
+ "route": {
+  "template": {
+   "name": "hardbench-fleet-g-so-aha2025-llama-joycaption-beta-one-hf-f1-t03-off-s1-aha2025-llama-joycaption-beta-one-hf-llava-q4-k-.20261002-103856",
+   "mode": "compute",
+   "load": "gpu",
+   "initiator": "ClaudeSupervisor",
+   "payload": "{FOUNDRY_ROOT}\\bin\\infer_ollama.py",
+   "args": [
+    "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20261002\\fleet-g-so-aha2025-llama-joycaption-beta-one-hf-f1-t03-off-s1\\items.20261002-103856.json",
+    "{ORDER_OUT}\\out.json",
+    "--model",
+    "aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M",
+    "--rounds",
+    "3",
+    "--num-ctx",
+    "6144",
+    "--temperature",
+    "0.3",
+    "--seed-base",
+    "1",
+    "--price-ceiling-s",
+    "16.0",
+    "--grade",
+    "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\payloads\\map_swarm_code_hard.py"
+   ],
+   "progress_glob": "{ORDER_OUT}\\out.progress\\*.done",
+   "progress_total": 33,
+   "deliver_to": "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20261002\\fleet-g-so-aha2025-llama-joycaption-beta-one-hf-f1-t03-off-s1",
+   "notify": "failures"
+  },
+  "kind": "",
+  "only": [
+   "softserve"
+  ],
+  "exclude": [],
+  "items": null
+ },
+ "initiator": "fleet-desk",
+ "created": "2026-10-02T15:38:55.836728+00:00",
+ "claimed_by": "softserve",
+ "claimed_at": "2026-10-02T15:39:15.467820+00:00"
+}

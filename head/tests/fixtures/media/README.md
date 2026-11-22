@@ -1,0 +1,1 @@
+The 1014-byte file is the original box2-m ICO saved with a .png filename. SHA-256 cfda639f360d6bb47bb378d5e3f122ead908802cca2235272bfafdb66f286c0d. The control is the existing Strata Vision.normalize result (white alpha composite); originals remain untouched.

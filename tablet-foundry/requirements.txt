@@ -1,0 +1,10 @@
+# TOLKIEN image deps — deliberately tiny. Pins match the orchestrator image where shared, so the
+# same module behaves identically on both sides of the split.
+pillow==12.3.0
+playwright==1.64.1
+httpx==0.28.1
+requests==2.34.2
+# 34-A1 R4 (2026-10-06): rigby runs A1 as an Inspect eval (payloads/a1, the `lab` provider's tolkien backend). Same
+# version the GPU side evaluated; resolves with the three pins above unchanged (probe image, 266 -> 672 MB).
+inspect-ai==0.3.276
+agent-client-protocol==0.12.1   # inspect-ai 0.3.276 declares >=0.12.0 with no ceiling; 1.0.0 dropped acp.helpers and broke its import (2026-11-18)

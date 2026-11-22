@@ -1,0 +1,13 @@
+# SearXNG for HAI's search tool: the defaults, plus the JSON output HAI asks for. Step 4 of the compose file copies
+# this to settings.yml beside it with a random secret_key; SearXNG reads settings.yml, and git ignores it.
+use_default_settings: true
+
+server:
+  # Step 4 puts a random value here in your settings.yml (SearXNG refuses its built-in default).
+  secret_key: "replace-with-a-random-value"
+  limiter: false
+
+search:
+  formats:
+    - html
+    - json

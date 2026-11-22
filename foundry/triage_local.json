@@ -1,0 +1,7 @@
+{
+  "_doc": "Per-FACTORY triage model + context (30b). the owner, 2026-08-21: 'we let the factories use their specific context specifications due to the customizations I have done to each individual factory' -- these are BOX customizations, not order fields. One file on every box; each box reads its own row by hostname. An order arg (--model/--num-ctx) still overrides, rarely ('can be manually requested in the order if needed').",
+  "_ctx": "num_ctx = the model's measured fully-resident fit on that box (spill-aware re-fit on ollama 0.40.5, campaigns/fit-20261015; menu_fill.TESTED_CTX). Must equal the orchestrator's config.MODEL_NUM_CTX for the same model and box; hard-bench tests/test_ctx_stores_agree.py fails when they drift (2026-10-19: these rows still held the pre-0.40 fits).",
+  "mothership": {"model": "qwen3.8:27b", "num_ctx": 125952},
+  "bighonker":  {"model": "qwen3.5:9b",  "num_ctx": 19968},
+  "softserve":  {"model": "qwen3:8b",    "num_ctx": 23552}
+}

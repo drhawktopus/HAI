@@ -1,0 +1,91 @@
+{
+ "id": "1ed437c62590",
+ "kind": "factory_order",
+ "order_name": "hardbench-fleet-f2-t06-think-32k-27b.20260928-202020_mothership",
+ "spec": {
+  "name": "hardbench-fleet-f2-t06-think-32k-27b.20260928-202020_mothership",
+  "mode": "compute",
+  "load": "gpu",
+  "initiator": "ClaudeSupervisor",
+  "payload": "{FOUNDRY_ROOT}\\bin\\infer_ollama.py",
+  "args": [
+   "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260928\\fleet-f2-t06-think-32k\\items.20260928-202020.json",
+   "{ORDER_OUT}\\out.json",
+   "--model",
+   "qwen3.6:27b",
+   "--rounds",
+   "3",
+   "--num-ctx",
+   "32768",
+   "--temperature",
+   "0.6",
+   "--seed-base",
+   "1",
+   "--think",
+   "--grade",
+   "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\payloads\\map_swarm_code_hard_f2.py"
+  ],
+  "progress_glob": "{ORDER_OUT}\\out.progress\\*.done",
+  "progress_total": 75,
+  "deliver_to": "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260928\\fleet-f2-t06-think-32k",
+  "notify": "failures",
+  "caption_model": "aha2025/llama-joycaption-beta-one-hf-llava:Q8_0",
+  "caption_workers": 4,
+  "python_exe": "F:\\ai-toolkit\\venv\\python.exe",
+  "requires": [
+   "order.compute",
+   "model.qwen3.6:27b"
+  ],
+  "placed_by": "scheduler.compose_orders",
+  "placed_on": "mothership"
+ },
+ "requires": [
+  "order.compute",
+  "model.qwen3.6:27b"
+ ],
+ "rush": false,
+ "after_ids": [],
+ "step": "",
+ "host": "mothership",
+ "status": "failed",
+ "route": {
+  "template": {
+   "name": "hardbench-fleet-f2-t06-think-32k-27b.20260928-202020",
+   "mode": "compute",
+   "load": "gpu",
+   "initiator": "ClaudeSupervisor",
+   "payload": "{FOUNDRY_ROOT}\\bin\\infer_ollama.py",
+   "args": [
+    "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260928\\fleet-f2-t06-think-32k\\items.20260928-202020.json",
+    "{ORDER_OUT}\\out.json",
+    "--model",
+    "qwen3.6:27b",
+    "--rounds",
+    "3",
+    "--num-ctx",
+    "32768",
+    "--temperature",
+    "0.6",
+    "--seed-base",
+    "1",
+    "--think",
+    "--grade",
+    "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\payloads\\map_swarm_code_hard_f2.py"
+   ],
+   "progress_glob": "{ORDER_OUT}\\out.progress\\*.done",
+   "progress_total": 75,
+   "deliver_to": "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260928\\fleet-f2-t06-think-32k",
+   "notify": "failures"
+  },
+  "kind": "",
+  "only": [],
+  "exclude": [],
+  "items": null
+ },
+ "initiator": "fleet-desk",
+ "created": "2026-09-29T01:20:22.209737+00:00",
+ "claimed_by": "mothership",
+ "claimed_at": "2026-09-29T01:20:40.974824+00:00",
+ "updated": "2026-09-29T01:28:02.286740+00:00",
+ "error": "stopped by operator slip"
+}

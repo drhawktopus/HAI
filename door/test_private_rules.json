@@ -1,0 +1,25 @@
+{
+ "_about": "Synthetic rules for Uhura's tests: no real name or word of the lab's.",
+ "private_names": {
+  "pattern": "(?i)^(person-records|.*credential|zz-private-)"
+ },
+ "people": {
+  "pattern": "\\b(Avery|Jordan)\\b"
+ },
+ "always_private": {
+  "pattern": "(?i)zzsecretname"
+ },
+ "intimate": {
+  "pattern": "(?i)\\b(zzintimate)\\b"
+ },
+ "soft_intimate": {
+  "pattern": "(?i)\\b(zzsoft)\\b"
+ },
+ "benchmark": {
+  "pattern": "(?i)zzbench"
+ },
+ "closed_topics": {
+  "pattern": "(?i)(?<![/\\\\\\w.-])p20(?![/\\\\\\w-])|project[ -]?20\\b"
+ },
+ "owner_name": "Avery"
+}

@@ -1,0 +1,31 @@
+{
+  "Casey Hart": {
+    "namespace": "hartcasey",
+    "persona": "general"
+  },
+  "Emerson": {
+    "namespace": "emersonlaws",
+    "persona": "general"
+  },
+  "Jordan": {
+    "corpus": "jordan",
+    "namespace": "jordan"
+  },
+  "Morgan": {
+    "corpus": "morgan",
+    "namespace": "nursing_morgan",
+    "persona": "nursing"
+  },
+  "Officer Parker": {
+    "persona": "law"
+  },
+  "Riley": {
+    "corpus": "riley",
+    "namespace": "nursing",
+    "persona": "nursing"
+  },
+  "drew321": {
+    "namespace": "drew0428",
+    "persona": "general"
+  }
+}

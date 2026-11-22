@@ -1,0 +1,77 @@
+# Uhura has its own compose project on purpose: it is not on arrnet, and it holds no Docker socket,
+# ssh key or credential mount. Its only document source is ./published.
+# netguard owns the network namespace and refuses new connections to private ranges. It alone holds
+# NET_ADMIN; uhura shares its network and cannot change the rules.
+services:
+  netguard:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.netguard
+    container_name: uhura-netguard
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    environment:
+      - LIAISON_HOST=${UHURA_LIAISON_HOST:?set UHURA_LIAISON_HOST in .env}
+    # Docker forwards lookups from inside this namespace, so a private resolver would be blocked by netguard.
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    ports:
+      - "8478:8000"
+    mem_limit: 32m
+    pids_limit: 16
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  uhura:
+    build: .
+    container_name: uhura
+    restart: unless-stopped
+    network_mode: "service:netguard"
+    depends_on:
+      - netguard
+    env_file: .env
+    environment:
+      - UHURA_STATE_DIR=/state
+      - UHURA_PUBLISHED_DIR=/published
+      - UHURA_DESK_DIR=/desk
+      # the transcripts' folder INSIDE the container (the mount below). .env's UHURA_TRANSCRIPTS_DIR names the host's
+      # folder for that mount, and env_file would otherwise hand the host's path to the app, which then reads nothing
+      - UHURA_TRANSCRIPTS_DIR=/transcripts
+      - UHURA_OWNER_NAME=${UHURA_OWNER_NAME:?set UHURA_OWNER_NAME in .env}
+      - UHURA_EGRESS_CANARY=${UHURA_EGRESS_CANARY:?set UHURA_EGRESS_CANARY in .env}
+      - UHURA_LIAISON_URL=${UHURA_LIAISON_URL:?set UHURA_LIAISON_URL in .env}
+      - FASTMCP_HOME=/state
+      - FASTMCP_SHOW_SERVER_BANNER=false
+    volumes:
+      - ./published:/published:ro
+      - ./state:/state
+      - ./desk:/desk
+      # the owner's filtered transcripts, written by deploy/publish_transcripts.py
+      - ${UHURA_TRANSCRIPTS_DIR:?set UHURA_TRANSCRIPTS_DIR in .env}:/transcripts:ro
+    read_only: true
+    # Healthy = she answers on her own port with a real library (a documents count of 0 means the publisher's folder
+    # is empty, which serves nothing). Reports only: `docker ps` shows it, and the dashboard tile reads the same /status.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,sys,urllib.request as u; d=json.load(u.urlopen('http://127.0.0.1:8000/status', timeout=5)); sys.exit(0 if d.get('up') and d.get('documents', 0) > 0 else 1)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    pids_limit: 128
+    labels:
+      - com.centurylinklabs.watchtower.enable=false

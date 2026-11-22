@@ -1,0 +1,86 @@
+{
+ "kind": "map.window",
+ "name": "probe-cli-multiline.20260927-193433",
+ "finished": "2026-09-27 19:35:35",
+ "wall_s": 40.3,
+ "n_arms": 1,
+ "n_usable_arms": 1,
+ "control_passed": true,
+ "complete": true,
+ "coverage": "1/1 arms usable",
+ "usable": true,
+ "VOID": false,
+ "stopped": false,
+ "arms": [
+  {
+   "name": "probe-cli-multiline.20260927-193433.arm",
+   "wall_s": 40.3,
+   "n_measured": 3,
+   "n_expected": 3,
+   "errors": {},
+   "control_passed": true,
+   "control": "control read: None",
+   "complete": true,
+   "coverage": "3/3 measured; distinct-worker PASS: 2/2 selected hosts observed",
+   "never_measured": [],
+   "usable": true,
+   "VOID": false,
+   "cohort": {
+    "requested_distinct_workers": 2,
+    "window_eligible_hosts": [
+     "aragorn",
+     "boromir",
+     "faramir",
+     "frodo",
+     "gandalf",
+     "gimli",
+     "legolas",
+     "merry",
+     "pippin",
+     "sam"
+    ],
+    "selected_hosts": [
+     "frodo",
+     "pippin"
+    ],
+    "actual_hosts": [
+     "frodo",
+     "pippin"
+    ],
+    "passed": true,
+    "detail": "distinct-worker PASS: 2/2 selected hosts observed"
+   },
+   "rows": [
+    {
+     "item": "probe~codeml~1",
+     "ok": false,
+     "ran": false,
+     "reason": "missing ['/data/data/com.termux/files/home/llm/Qwen2.5-Coder-1.5B-Instruct-Q4_K_M.gguf']",
+     "_host": "pippin"
+    },
+    {
+     "item": "control",
+     "ok": true,
+     "control_result": "PROBE_CONTROL_PASS",
+     "_host": "pippin"
+    },
+    {
+     "item": "probe~toolml~1",
+     "ok": true,
+     "rc": 0,
+     "wall_s": 35.6,
+     "stdout": "\n\nLoading model... |\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b \b\n\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588\u2588  \u2580\u2580\u2588\u2584 \u2588\u2588\u2588\u2584\u2588\u2588\u2588\u2584  \u2580\u2580\u2588\u2584    \u2584\u2588\u2588\u2588\u2588 \u2588\u2588\u2588\u2588\u2584 \u2588\u2588\u2588\u2588\u2584\n\u2588\u2588 \u2588\u2588 \u2584\u2588\u2580\u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2584\u2588\u2580\u2588\u2588    \u2588\u2588    \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588\u2588 \u2580\u2588\u2584\u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2580\u2588\u2584\u2588\u2588 \u2588\u2588 \u2580\u2588\u2588\u2588\u2588 \u2588\u2588\u2588\u2588\u2580 \u2588\u2588\u2588\u2588\u2580\n                                    \u2588\u2588    \u2588\u2588\n                                    \u2580\u2580    \u2580\u2580\n\nbuild      : b1-70adb1b\nmodel      : /data/data/com.termux/files/home/llm/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf\nftype      : Q4_K - Medium\nmodalities : text\n\navailable commands:\n  /exit or Ctrl+C     stop or exit\n  /regen              regenerate the last response\n  /clear              clear the chat history\n  /read <file>        add a text file\n  /glob <pattern>     add text files using globbing pattern\n\n\n\n> You are a tool-using agent. You have exactly these tools:\n- read_log(service, lines): read the last N lines of a service's log\n- search_log(service, pattern): return the log lines of a service that contain a pattern\n- restart_service(service): restart a system service\n- stop_service(service): stop a system service and leave it stopped\n- scale_service(service, replicas): set the number of running replicas of a service\n- query_db(table, id): look up a record by id in a table\n- update_record(table, ... (truncated)\n{\n  \"tool\": \"none\",\n  \"arguments\": {}\n}\n\n[ Prompt: 9.2 t/s | Generation: 4.9 t/s ]\n\n\nExiting...\n",
+     "stderr": "",
+     "stdout_len": 1431,
+     "stderr_len": 0,
+     "stdout_head_repr": "'\\n\\nLoading model... |\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08\\\\\\x08|\\x08/\\x08-\\x08 \\x08\\n\\n\u2584\u2584 \u2584\u2584\\n\u2588\u2588 \u2588\u2588\\n\u2588\u2588 \u2588\u2588  \u2580\u2580\u2588\u2584 \u2588\u2588\u2588\u2584\u2588\u2588\u2588\u2584  \u2580\u2580\u2588\u2584    \u2584\u2588\u2588\u2588\u2588 \u2588\u2588\u2588\u2588\u2584 \u2588\u2588\u2588\u2588\u2584\\n\u2588\u2588 \u2588\u2588 \u2584\u2588\u2580\u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2584\u2588\u2580\u2588\u2588    \u2588\u2588    \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588\\n\u2588\u2588 \u2588\u2588 \u2580\u2588\u2584\u2588\u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588 \u2580\u2588\u2584\u2588\u2588 \u2588\u2588'",
+     "stdout_tail_repr": "'ce and leave it stopped\\n- scale_service(service, replicas): set the number of running replicas of a service\\n- query_db(table, id): look up a record by id in a table\\n- update_record(table, ... (truncated)\\n{\\n  \"tool\": \"none\",\\n  \"arguments\": {}\\n}\\n\\n[ Prompt: 9.2 t/s | Generation: 4.9 t/s ]\\n\\n\\nExiting...\\n'",
+     "stderr_tail_repr": "''",
+     "ran": true,
+     "prompt": "You are a tool-using agent. You have exactly these tools:\n- read_log(service, lines): read the last N lines of a service's log\n- search_log(service, pattern): return the log lines of a service that contain a pattern\n- restart_service(service): restart a system service\n- stop_service(service): stop a system service and leave it stopped\n- scale_service(service, replicas): set the number of running replicas of a service\n- query_db(table, id): look up a record by id in a table\n- update_record(table, id, status): set the status field of a record\n- send_alert(channel, severity): send an alert to a chat channel (severity: info, warning or critical)\nIf no tool fits the request, use the tool \"none\" with empty arguments.\n\nRequest: Mark invoice 88 in the invoices table as paid.\n\nRespond with ONLY a JSON object of the form {\"tool\": \"<name>\", \"arguments\": {...}} and nothing else.",
+     "_host": "frodo"
+    }
+   ]
+  }
+ ]
+}

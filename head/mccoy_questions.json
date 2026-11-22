@@ -1,0 +1,40 @@
+{
+ "tier": {
+  "type": "choice",
+  "instructions": "You do NOT answer the request. Decide only WHO in a home AI lab should handle this ONE request.",
+  "criteria": {
+   "tool": "a lab tool or plain code does it: make, render or generate an image or photo; re-render one with a change; wake or reboot a machine; check a job's, a render's or a machine's progress, status or rate; approve or propose a lab action; run a named lab tool; look up who can be rendered",
+   "fellowship": "simple chat a tiny model answers instantly from general knowledge: a greeting, small talk, a one-line fact anyone knows (a number, a date, a name, the year, a definition), a ping",
+   "8gb": "a short answer that needs the lab's OWN documentation or records looked up: where something is in the lab, why something was decided, what a lab component does, a brief summary of a lab document",
+   "lead": "real work or anything needing judgment: coding, multi-step research, writing help, plans and designs, reviewing documents or code, finding things on a machine, legal or other high-stakes reasoning - and ANY request you are unsure about"
+  }
+ },
+ "family": {
+  "type": "choice",
+  "instructions": "Which family of work is this request?",
+  "criteria": {
+   "chat": "chat",
+   "coding": "coding",
+   "ops": "ops (running the lab's machines and services)",
+   "image": "image",
+   "research": "research",
+   "writing": "writing"
+  }
+ },
+ "kind": {
+  "type": "choice",
+  "instructions": "Is this request a chat or a job?",
+  "criteria": {
+   "chat": "answered in one reply, at most one tool call",
+   "job": "many steps, tools, or work that runs as an order"
+  }
+ },
+ "depth": {
+  "type": "choice",
+  "instructions": "You do NOT answer the request. Decide only HOW the user wants it handled: a QUICK reply right now, or a THOROUGH piece of work they expect to wait for.",
+  "criteria": {
+   "quick": "the user wants a fast, short reply now: a fact, a number, a yes or no, a quick explanation, small talk, a status check - anything they would be annoyed to wait more than a few seconds for",
+   "deep": "the user is asking for real work and expects to wait for it: analysis, research, a plan or design, writing or generating something, reviewing documents or code, a multi-step task, anything that needs reading or tools first"
+  }
+ }
+}

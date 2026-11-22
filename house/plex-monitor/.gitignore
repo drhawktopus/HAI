@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.env
+.env.*
+*.bak*
+*.preclean*
+*.log
+*.webhook
+*.log
+plex_monitor_state.json
+plex_watchdog/plex_watchdog_state.json
+# this box's own paths (plex_monitor.settings.json, plex_watchdog.settings.json)
+*.settings.json

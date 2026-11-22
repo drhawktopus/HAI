@@ -1,0 +1,554 @@
+{
+ "about": "Rigby's speed arsenal as data (the owner 2026-10-14: 'take a step back and do a review of the arsenal at our disposal and our data ... all the different ways we can store layers, how we can store expert caches, the way to speed things up'). Same schema and rule as mothership-build\\workspace\\flashnext\\arsenal.json: a lever counts as TRIED only when its FULL form ran; partial forms are partial; update a lever's status in the SAME pass its result lands. Model: Qwen3.6-35B-A3B-UD-Q3_K_XL (16 GB, qwen35moe, 40 layers: 10 full attention + 30 DeltaNet). Box: i7-3770 (AVX+F16C, no AVX2), 4x DDR3-1600 (24 GB), GTX 1060 6 GB on a riser at PCIe 3.0 x1, GT 730 2 GB in a Gen 2 chipset slot, 10 Fellowship tablets on USB 2. Status: open | testing | partial | done | closed | needs-owner | reassign | n/a. 'reassign' = the device's old job is now done faster by another part of the box; the DEVICE is not retired (the owner 2026-10-14: 'idk that anything is superseded due to our philosophy for this being the Frankenstein machine. It's been given more hardware to work with, rather than replacing the hardware ... Ideally we can get everything pinned to maximum') - it needs a new job that stacks with the rest.",
+ "terms": {
+  "write_ms_per_token_2k": {
+   "cpu_experts": 36.9,
+   "wait_on_gpu_plus_copies": 29.3,
+   "issue_vulkan": 7.8,
+   "outside_scheduler": 4.9,
+   "gpu_side_copies": 1.9,
+   "wall": 81.0,
+   "source": "r50 GGML_SCHED_PROFILE, 1060 Vulkan, fitter margin 1024, ub 2048, -np 1, 4 threads"
+  },
+  "write_ms_per_token_12k": {
+   "cpu_experts": 37.0,
+   "wait_on_gpu_plus_copies": 34.5,
+   "issue_vulkan": 7.9,
+   "outside_scheduler": 5.1,
+   "gpu_side_copies": 2.1,
+   "wall": 86.0,
+   "source": "r50"
+  },
+  "read": {
+   "model": "~10 s per micro-batch to stream the CPU-held experts over x1 (op offload, batches >= 32) + ~6.8 ms per token",
+   "source": "r36 ub sweep 512/1024/2048 = 37.6/59.4/85.5 tok/s",
+   "status": "inferred from a 3-point fit"
+  }
+ },
+ "resources": [
+  "gpu_compute_1060",
+  "gpu_sched",
+  "vram_1060",
+  "cpu_cores",
+  "ddr3",
+  "ram",
+  "pcie_x1",
+  "gt730",
+  "tablets_usb2",
+  "engine",
+  "quality"
+ ],
+ "levers": {
+  "fitter_placement": {
+   "family": "placement",
+   "full": "llama.cpp --fit on the named card (fit_target margin, fitc = working context)",
+   "status": "done",
+   "tested": [
+    "margin 1024 (r40)",
+    "margin 256 (r41: +765 MiB on the card, verified by telemetry)"
+   ],
+   "result": "the right SHAPE (attention + shared parts of every layer on the 1060, experts mostly CPU); more experts on the card buys <1 % write - the CPU expert term is not proportional to the bytes moved at this scale",
+   "attacks": [
+    "cpu_experts"
+   ]
+  },
+  "fitted_args_record": {
+   "family": "instrument",
+   "full": "llama-fit-params WITHOUT -fitp, recorded per order (the fitted -ngl/-ot)",
+   "status": "partial",
+   "tested": [
+    "-fitp on prints the ESTIMATE only (model 15539 / ctx 702 / compute 2372 MiB)"
+   ],
+   "result": "an instrument gap, not a speed lever: record the fitter's expert split per order (llama-fit-params is already in the cohort's fit_placement)",
+   "attacks": []
+  },
+  "hand_ncmoe": {
+   "family": "placement",
+   "full": "-ngl 99 --n-cpu-moe N sized by arithmetic (compute buffer counted), the community's 1060 recipe",
+   "status": "closed",
+   "tested": [
+    "hand -ngl 99 + -ot without counting the compute buffer: OOM (r33/r34)"
+   ],
+   "result": "CLOSED - the fitter already places experts; r41: more experts on the card buys little here",
+   "attacks": [
+    "cpu_experts"
+   ]
+  },
+  "whole_layer_split": {
+   "family": "placement",
+   "full": "-ngl K whole layers, no slicing",
+   "status": "closed",
+   "tested": [
+    "-ngl 8 (r44): 6.06 vs 13.14"
+   ],
+   "result": "loses: the 1060's job is attention + shared parts of EVERY layer",
+   "attacks": []
+  },
+  "gt730_attention_holder": {
+   "family": "placement",
+   "full": "the 10 attention layers + KV on the GT 730, rest CPU (--no-op-offload)",
+   "status": "done",
+   "tested": [
+    "10-07: +25 % at 12K, +39 % 16-32K, +66 % >32K vs CPU; -22 % at 2K"
+   ],
+   "result": "REASSIGNED and measured: the 730's stacking job is a warm worker beside the A3B (warm_gt730, r76: 10.1 tok/s on the 0.8B, A3B -6 %); its use is #34 placement policy",
+   "attacks": []
+  },
+  "gt730_expert_holder": {
+   "family": "placement",
+   "full": "fitter over [gtx1060, gt730], 730 margin 256",
+   "status": "closed",
+   "tested": [
+    "r43: write 4.0 / 3.6 vs 12.35, read 32 vs 82 (stopped)"
+   ],
+   "result": "-68 % write: a layer split runs in series and the slowest card sets the pace (community: splits serialise, replicas scale)",
+   "attacks": []
+  },
+  "tablet_read_split": {
+   "family": "placement",
+   "full": "pipelined prefill over rigby + 10 tablets (async-RPC build + lab patches), handoff to the writer",
+   "status": "done",
+   "tested": [
+    "r13-r32: 1.34x at 4K, 1.09x 16K vs rigby CPU; KLD = noise floor"
+   ],
+   "result": "REASSIGNED and measured: the tablets add BESIDE rigby with their own work (r71: rigby -0-2 %, tablets -5 %; r76 whole box ~50 tok/s across 11 nodes); inside one A3B read they would be the slowest stage",
+   "attacks": []
+  },
+  "read_write_handoff": {
+   "family": "placement",
+   "full": "slot save -> restore into a different writer config",
+   "status": "done",
+   "tested": [
+    "r23, r32 (card writer): works, 0.4-8.5 s"
+   ],
+   "result": "REASSIGNED: built and working (round 23); one 1060 server now does both halves, so the handoff stays a tool for moving a context between engines, not a lever",
+   "attacks": []
+  },
+  "replicas_independent_work": {
+   "family": "whole_box",
+   "full": "tablets and the GT 730 run their OWN jobs beside the 1060's A3B",
+   "status": "done",
+   "tested": [
+    "r71 (10-14) tablets beside the A3B: rigby -0-2 %, tablets -5 %; r76 (10-15) whole box with the GT 730 as an 11th warm node: A3B -6 %, Fellowship ~50 tok/s, 730 10.1 tok/s"
+   ],
+   "result": "THE WHOLE BOX ADDS: ~16 tok/s A3B-class + ~50 tok/s small-model at once; the 730 costs the A3B ~6 % for ~10 tok/s",
+   "attacks": [
+    "throughput"
+   ]
+  },
+  "expert_cache": {
+   "family": "expert_cache",
+   "full": "--moe-cache-mib (in the next build): LRU cache of hot experts in VRAM, misses uploaded over PCIe",
+   "status": "closed",
+   "tested": [
+    "x16 2026-10-30 moecache-x16-* (speed_rewrite_probe 2K / 12K write tok/s; controls ctl-a / ctl-b / zz-ctl-c 18.56/17.75, 18.68/17.80, 18.54/17.73 - agree): 512 MiB 13.23/13.02, 1024 13.45/10.50, 1536 12.02/8.17, 1024 + fit 2048 9.85/6.20, 1024 MTP off 11.99/11.60. Every size loses 25-65 %"
+   ],
+   "result": "CLOSED on x16 2026-10-30: every cache size loses (best 512 MiB, -27 % on the 12K rewrite); the library's own research predicted it (Research-Kai-llama-cpp-Expert-Cache: small cards lose, ~85 % hit-rate break-even, MTP worse with a small cache). BigHonker's 8 GB win does not carry to the 6 GB 1060. Was: REOPENED 2026-10-30: the x1 reason is gone (full-width riser 10-26) and the full form has NEVER run on rigby - the x16 re-test of 10-27 was the OTHER mechanism (the hot store, PR #26563). rigby's standard cuda build (/llama/cuda, 2026-10-22) carries --moe-cache-mib, but tolkien_llm has no order field for it (unwired). Precedent on the same model: BigHonker's A3B, --moe-cache-mib 1024 = the winner, 26.5-32.9 vs 22.9-24.2 tok/s (register B10, 10-17). Was: CLOSED on x1 - predicted loss (misses ride the link; the author: leave off below x8); the hot store measured -60-70 % read on rigby (r61-r64). PREDICTED LOSS: gains reported on x16; losses on 6-8 GB cards and narrow links, author: leave off below x8; rigby's 1060 is x1. Mothership: +31 % warm but only on its patched repack path",
+   "attacks": [
+    "cpu_experts"
+   ],
+   "couplings": [
+    "pcie_riser",
+    "fit_target (the cache lives in the fitter's free-VRAM headroom)"
+   ]
+  },
+  "hotness_placement": {
+   "family": "expert_cache",
+   "full": "all experts CPU-side, VRAM spent as cache slots on every layer",
+   "status": "closed",
+   "tested": [
+    "x16 2026-10-27 riser-x16-mtp-hotstore-auto vs -control (3 answers each): write 14.47 vs 14.54, read 292 vs 308 - no write gain at x16, and the hotstore build writes ~18 % below the standard cuda build"
+   ],
+   "result": "CLOSED on x1 AND x16 (2026-10-27). CLOSED on x1 - same mechanism as expert_cache (r61-r64)",
+   "attacks": [
+    "cpu_experts"
+   ]
+  },
+  "static_hot_experts": {
+   "family": "placement",
+   "full": "each layer's hottest experts (by measured routing) resident on the 1060, the rest on the CPU, a token's experts split between them and summed - no uploads at runtime (engine patch + repack tool)",
+   "status": "closed",
+   "tested": [
+    "r60 routing count (imatrix over rigby's A1 traffic): top 46 of 256 per layer carry median 53 % of routed tokens (30-66 %), top 16 27 %, top 128 86 %",
+    "r61 llama.cpp PR #26563 hot store as shipped (per-matrix hook, live heatmap, 27 slots at ub 2048): write 13.54 / 13.39 vs store-off control r61c 14.19 / 13.70 (-5 / -2 %); frozen 12.67 / 12.46",
+    "r62 lab block-split patch (lab-engine/patches/hotstore_block_patch.py: whole gate/up/swiglu/down chain hot on the 1060, cold on the CPU, one add per layer) + static fill from r60's A1 ranking: 27 slots 12.42 / 12.08, hit rate 9.4 %; 48 slots (ub 512, margin 256) 12.99 / 12.71",
+    "r63 routing count on the speed probe's own prompt: its top 27 / 48 carry 50 / 67 %; r60's A1 set catches only 22 / 37 % of it (top-set overlap 26 / 38 %) - routing is task-specific",
+    "r64 CEILING - block split filled from the probe's OWN ranking, 48 slots: write 14.71 / 14.32 (+4 % vs control, ~+1.5 % vs the standard order r54 14.51 / 14.02), hit rate 41.9 % (22-63), read 32 / 31 (ub 512) vs 78 / 106",
+    "x16 2026-10-27 riser-x16-mtp-hotstore-auto vs -control (3 answers each): write 14.47 vs 14.54, read 292 vs 308 - no write gain at x16, and the hotstore build writes ~18 % below the standard cuda build"
+   ],
+   "result": "CLOSED on x1 AND x16 (2026-10-27). CLOSED on rigby 10-14: best case (a hot set tuned to the very text written) +4 % write over the store-off control at -60-70 % read; moving ~42 % of the CPU expert work to the 1060 nets ~2.5 ms of ~15 ms - the dual path's own GPU work and hand-offs eat the rest. Routing is task-specific, so a static set does worse on mixed work. Binding terms: the x1 link, 6 GB (~48 slots/layer), task-specific routing. Build 'hotstore' + order field expert_hot stay wired in Tolkien for a bigger card / wider link",
+   "attacks": [
+    "cpu_experts"
+   ],
+   "couplings": [
+    "pcie_x1"
+   ]
+  },
+  "asymmetric_cook": {
+   "family": "quant",
+   "full": "lower-bit experts on the CPU-side layers only (e.g. Q2_K), card-side layers untouched; quality priced by the lab KLD instrument (noise floor 0.011)",
+   "status": "out-of-scope",
+   "tested": [],
+   "result": "OUT of #36: a re-quant of the CPU-side experts is a new model artefact, not a setting on the box we have; attacks the biggest term (cpu_experts 37 ms); Mothership's fitting_cook/asym24 is the precedent; avoid IQ types on the CPU side (IQ decode cost lost on Mothership); source: requantize (lossy on lossy) or a higher-bit download",
+   "attacks": [
+    "cpu_experts"
+   ],
+   "couplings": [
+    "quality"
+   ]
+  },
+  "kv_quant": {
+   "family": "quant",
+   "full": "-ctk/-ctv q8_0",
+   "status": "closed",
+   "tested": [
+    "GT 730 at 24K: f16 3.12 > K q8 2.55 > K+V q8 2.10"
+   ],
+   "result": "CLOSED - low value: KV is 702 MiB at 32K on rigby; bytes on the card buy little (r41)",
+   "attacks": []
+  },
+  "np1": {
+   "family": "server",
+   "full": "-np 1",
+   "status": "done",
+   "tested": [
+    "r39 vs r37: <1 %"
+   ],
+   "result": "kept as the default; slot memory is not the limit on this model",
+   "attacks": []
+  },
+  "ubatch": {
+   "family": "read",
+   "full": "-ub 512 / 1024 / 2048 / 4096 (+ -b)",
+   "status": "done",
+   "tested": [
+    "512/1024/2048: read 37.6/59.4/85.5 (r36); write cost of 2048: -1 % (r40)",
+    "r73 ubatch 4096 (10-15): read 101.6 / 127.7 (+42 / +30 %) but write 13.32 / 10.38 (-19 / -38 %); compute buffer 4.3 GB pushes weights off the card"
+   ],
+   "result": "2048 stays for the write-bound A1 work; 4096 a candidate only for read-heavy job types",
+   "attacks": [
+    "read"
+   ]
+  },
+  "op_offload_min_batch": {
+   "family": "read",
+   "full": "GGML_OP_OFFLOAD_MIN_BATCH ~400-500 so small reads stay on the CPU+GPU path instead of streaming",
+   "status": "done",
+   "tested": [
+    "r66 256 on the standard order: 47-token read 6.52 -> 3.07 s (2.1x), 2.4K/14K reads and write unchanged; ADOPTED 10-14",
+    "x16 2026-10-27 riser-x16-mtp-oomb-default vs -oomb256 (3 answers each): write 17.67 vs 17.72, read 299 vs 299 - a tie at x16; 256 stays"
+   ],
+   "result": "2.1x on small reads, free; 256 in the standard 1060 order",
+   "attacks": [
+    "read"
+   ]
+  },
+  "prefix_cache_reuse": {
+   "family": "read",
+   "full": "cache_prompt reuse across turns (A1 lives on it)",
+   "status": "done",
+   "tested": [
+    "r39 reused 1,929 cached tokens, r40 (ub 2048) only 397 on the same prompts",
+    "10-15 from data (no new run): the A1 react+paasio order on the standard 1060 order (ub 2048), 104 calls - re-read median 2.0 % of the prompt, beyond what each turn appended median -50 / p90 +8 / max +23 tokens; 6.1 % of 1.40 M prompt tokens re-read (research\\split-inference\\a1_cache_reuse.py)"
+   ],
+   "result": "CLOSED - reuse is already near-perfect in production; the r39/r40 'coarser at ub 2048' does not occur on today's engine for A1",
+   "attacks": [
+    "read"
+   ]
+  },
+  "load_mode_none_repack": {
+   "family": "cpu",
+   "full": "--load-mode none so the CPU backend repacks",
+   "status": "done",
+   "tested": [
+    "r46: no effect (12.47 vs 12.43)"
+   ],
+   "result": "repack kernels need AVX2; the i7-3770 has AVX only",
+   "attacks": []
+  },
+  "threads": {
+   "family": "cpu",
+   "full": "-t 2 / 4 / 8",
+   "status": "done",
+   "tested": [
+    "r44 bench 2/4/8: 9.85/13.14/13.57",
+    "r47 served 8: no effect (CPU 84.5 % - OpenMP spin)"
+   ],
+   "result": "4 = the physical cores, saturated; hyperthreads add nothing",
+   "attacks": []
+  },
+  "large_pages": {
+   "family": "cpu",
+   "full": "transparent huge pages for the expert buffers (with load_mode none = anonymous memory)",
+   "status": "out-of-scope",
+   "tested": [],
+   "result": "OUT of #36: a system setting (sysctl) on rigby, hardware/system tier the owner set aside 10-15",
+   "attacks": [
+    "cpu_experts"
+   ]
+  },
+  "ram_speed": {
+   "family": "cpu",
+   "full": "DDR3 above 1600 (BIOS) / fewer, matched sticks",
+   "status": "out-of-scope",
+   "tested": [
+    "4x DDR3-1600 at rated speed, 8+4 per channel (looks symmetric; slot-to-channel map unverified)"
+   ],
+   "result": "OUT of #36 (the owner 10-15: 'Don't worry about ram and the riser'); cpu_experts is partly bandwidth-bound [inferred]",
+   "attacks": [
+    "cpu_experts"
+   ]
+  },
+  "cuda_backend": {
+   "family": "engine",
+   "full": "CUDA 11.4 build for the GTX 1060 (sm_61, driver 470 kept for the 730), CUDA graphs",
+   "status": "done",
+   "tested": [
+    "r51 (2026-10-14): write 14.23 / 13.78 at 2K / 12K (+14 / +18 % vs Vulkan), read 80.6 / 109.3 (level / +47 %); profile: GPU wait 29.3 -> 15.4 ms/token, CPU experts 36.1 unchanged, issue 8.0 unchanged"
+   ],
+   "result": "the new default backend for the 1060; graphs-off control (r53) decides whether ~8 ms of issue cost is still recoverable; build in nvidia/cuda:11.4.3-devel-ubuntu20.04 (+ libnccl, libcudart, libcublas copied beside the binaries), Tolkien build 'cuda' (gate 790)",
+   "attacks": [
+    "wait_on_gpu_plus_copies",
+    "issue_vulkan",
+    "read"
+   ]
+  },
+  "cuda_graphs": {
+   "family": "engine",
+   "full": "CUDA graph capture of the 1060's segments - lab patch cuda_graphs_pre_volta_patch.py (llama.cpp disables graphs below Volta), env LAB_CUDA_GRAPHS_PRE_VOLTA=1",
+   "status": "done",
+   "tested": [
+    "r53: graphs forced off = r51 (never engaged)",
+    "r54 graphs on: issue 8.0 -> 1.1 ms but the wait on the card rose 15.4 -> 21.1; write 14.51 / 14.02 vs r51 14.23 / 13.78",
+    "r55 rebuilt binary, flag off: 14.28 / 13.83 = r51 (the rebuild moved nothing)"
+   ],
+   "result": "+1.5 % - kept in the standard 1060 order; the card's own work (~25 ms per token) is the GPU half's floor, the issue cost was overlapping it",
+   "attacks": [
+    "issue_vulkan"
+   ]
+  },
+  "newer_llamacpp": {
+   "family": "engine",
+   "full": "current upstream (fused DeltaNet / fewer graph nodes) beside next",
+   "status": "done",
+   "tested": [
+    "r74a (10-15): master e467e5b (CUDA 11.4 + graphs patch) on the standard order: write 16.81 / 16.86, read 72.6 / 99.6 = the 10-10 build within ~1 %"
+   ],
+   "result": "ADOPTED (the owner: update llama); no speed change; the 10-10 build kept as fallback",
+   "attacks": [
+    "wait_on_gpu_plus_copies",
+    "issue_vulkan"
+   ]
+  },
+  "vk_fusion_control": {
+   "family": "engine",
+   "full": "GGML_VK_DISABLE_FUSION=1 as a control (fusion is on by default)",
+   "status": "n/a",
+   "tested": [],
+   "result": "an instrument (engine_env allows it), not a lever",
+   "attacks": []
+  },
+  "async_sched_copies": {
+   "family": "engine",
+   "full": "llama.cpp PR #25319: scheduler input copies via events",
+   "status": "closed",
+   "tested": [
+    "10-15, not run: PR #25319 still OPEN, mergeable=false (conflicts with master), last touched 07-28; its own CUDA table on a P40 (Pascal sm_61 = the 1060's architecture): gpt-oss 20B MoE tg128 1.00x, llama 8B 1.00x; gains only on a 15M model / other cards; two earlier async-copy PRs were reverted"
+   ],
+   "result": "CLOSED - expected within noise on Pascal (rigby's per-layer CPU->GPU chain is serial, little to overlap); free with the next llama.cpp update if it ever merges",
+   "attacks": [
+    "wait_on_gpu_plus_copies"
+   ]
+  },
+  "cpu_gpu_overlap": {
+   "family": "engine",
+   "full": "run CPU routed experts concurrently with GPU work (expert deferral / shared-expert overlap / a helper pool inside the CPU split)",
+   "status": "out-of-scope",
+   "tested": [
+    "Mothership: deferral parked at parity (scheduler is one thread; hand-offs ~1 ms each)"
+   ],
+   "result": "OUT of #36 (the owner 10-15: 'focus on the stuff we actually have'): not a knob in llama.cpp - either expert deferral (lossy; parked at parity on Mothership) or a new engine helper pool (an engine project)",
+   "attacks": [
+    "cpu_experts",
+    "wait_on_gpu_plus_copies"
+   ]
+  },
+  "mtp": {
+   "family": "speculation",
+   "full": "built-in MTP head (draft 2), needs a GGUF that keeps the nextn tensors (Mothership's ollama qwen3.6:35b-a3b, 23.9 GB, carries mtp. tensors; or Unsloth's published head)",
+   "status": "done",
+   "prediction": "loss on this placement - same mechanism as r52a: verifying drafted tokens multiplies the CPU-held expert work",
+   "tested": [
+    "rigby's GGUF has 0 nextn tensors (re-read 2026-10-14: 733 tensors, positive control 20 attn_k, 0 nextn/mtp tensors, 0 mtp metadata keys) - the lab's MTP results are the 3.8 on Mothership",
+    "r67 Unsloth MTP file (unsloth/Qwen3.6-35B-A3B-MTP-GGUF UD-Q3_K_XL, sha256-verified; gguf_tensor_diff.py: non-expert tensors identical, all 120 routed-expert tensors re-quantized, +20 MTP tensors 424 MB), draft-mtp draft 2, rewrite probe: write 16.74 / 16.71 vs its no-spec control r67c 14.03 / 13.50 (+19 / +24 %), acceptance 99.6 % (copy-like), read -8-10 %",
+    "r68 same pair on 17 fresh-code impl tasks (map_swarm_code_hard.py, temp 0.6): acceptance 94.1 %, write 16.88 vs 13.92 (+21 %), 18/18 graded ok both arms",
+    "r69 KLD MTP file vs our plain file: mean 0.0159 (floor 0.0111), same top 92.6 %, PPL 26.70 vs 26.83 -> equivalent; ADOPTED in the standard 1060 order 10-14",
+    "r72a draft 3 (10-14): 15.97 vs draft 2 16.88 tok/s, acceptance 88.6 vs 94.1 % -> draft 4 cancelled"
+   ],
+   "result": "ADOPTED at draft 2 (+19-24 % write on code); draft 3 loses; MTP cleared of the A1 runaway (it happens without MTP)",
+   "attacks": [
+    "all_write"
+   ]
+  },
+  "ngram_spec": {
+   "family": "speculation",
+   "full": "ngram-simple / map-k / mod with the draft sized below the op-offload threshold (or the threshold raised), on the 1060 path",
+   "status": "closed",
+   "tested": [
+    "10-06 CPU path, live build, defaults: the SAME rewrite probe DRAFTED 3,504 and accepted 1,113 of 1,609 written (69 % of written tokens came from drafts, 32 % per drafted token) - and lost (-34 %) because a CPU check costs 4.6x a step",
+    "10-06 GT 730 + op offload: 0.51 tok/s (check batches streamed experts over PCIe)",
+    "r48 1060, next build, --spec-ngram-simple-size-m 8: draft_n EMPTY on all 7 rows = no drafts - cause unknown (my size-m mapping vs the 12-token lookup, or the next build); the earlier 'the probe never repeats itself' reading is WRONG"
+   ],
+   "result": "CLOSED on this placement by r52a (2026-10-14, CUDA, lookup 8 / draft 8 - drafting verified: acceptance 0.61, 1,070 of 1,760, mean run 5.9): write 9.42 vs 14.23 (-34 %). Mechanism: with ~52 % of a written token in CPU-held experts, a k-token check sends each token to its own experts, so CPU expert work grows ~k-fold and only the GPU half is batched (n-gram only - MTP measured separately and WINS: r67/r68). r52b (49-token checks) cancelled as known-bad. Reopens only if most experts move off the CPU (a bigger card, an x16 link + expert cache, or a much smaller quant)",
+   "attacks": [
+    "all_write"
+   ]
+  },
+  "draft_model": {
+   "family": "speculation",
+   "full": "a small same-tokenizer model drafts (on the CPU, the 730 or a tablet), the 1060 path checks",
+   "status": "closed",
+   "prediction": "loss on this placement for the A3B (r52a mechanism: the check is the cost); still valid for a model that fits the card",
+   "tested": [
+    "CPU-checked: +20 % (0.5B on the dense 14B); tablet drafter lost (1.87 vs 2.38)"
+   ],
+   "result": "needs a small model sharing Qwen3.6's tokenizer and high acceptance (k=3 costs 2.15x)",
+   "attacks": [
+    "all_write"
+   ]
+  },
+  "concurrency": {
+   "family": "throughput",
+   "full": "-np 2+ with continuous batching for several jobs at once",
+   "status": "priced",
+   "tested": [
+    "r45 check cost: 2 tokens in one pass cost 1.76x one"
+   ],
+   "result": "a serving lever, not a latency one (~+14 % aggregate for 2 streams [inferred]): priced in the re-pricing pass as a parallel-2 row if the menu needs it, not an evolution arm",
+   "attacks": [
+    "throughput"
+   ]
+  },
+  "sparse_attention": {
+   "family": "engine",
+   "full": "PR #28213 gather-based sparse attention decode",
+   "status": "closed",
+   "tested": [],
+   "result": "CLOSED for #36 - only 10 attention layers; GPU wait +5 ms from 2K to 12K; a long-context lever with no llama.cpp knob for this model",
+   "attacks": [
+    "wait_on_gpu_plus_copies"
+   ]
+  },
+  "pcie_riser": {
+   "family": "hardware",
+   "full": "an x16-electrical riser in the CPU slot (Gen3 x16 ~15.8 GB/s vs x1 ~1 GB/s)",
+   "status": "done",
+   "tested": [
+    "link verified Gen3 x1 under load",
+    "INSTALLED 2026-10-26 (the owner): Gen3 x16 read back; the c1 cell re-run unchanged read 3.5x on ~2K prompts (101 -> 350 tok/s), wrote +7 % (15.9 -> 17.2 / 16.9; engine also rebuilt between) - [[36-Rigby-Whole-Box-Synthesis-GTX1060-2026-10-13]] s8"
+   ],
+   "result": "DONE: reading 3.5x; writing ~level with the best public 1060 rig (17); reopens expert_cache",
+   "attacks": [
+    "read"
+   ],
+   "couplings": [
+    "expert_cache",
+    "hotness_placement"
+   ]
+  },
+  "sched_profile": {
+   "family": "instrument",
+   "full": "GGML_SCHED_PROFILE (lab patch, ported to 23b0202) via engine_env",
+   "status": "done",
+   "tested": [
+    "r50"
+   ],
+   "result": "the write terms above",
+   "attacks": []
+  },
+  "telemetry": {
+   "family": "instrument",
+   "full": "Tolkien telemetry (CPU, both GPUs by name, power, clocks, memory)",
+   "status": "done",
+   "tested": [
+    "r39-r47"
+   ],
+   "result": "OpenMP threads spin while waiting: busy cores != compute",
+   "attacks": []
+  },
+  "lzm_off": {
+   "family": "read",
+   "full": "-lzm off",
+   "status": "n/a",
+   "tested": [],
+   "result": "this model has no lazy per-layer embedding tensors",
+   "attacks": []
+  },
+  "clock_floor": {
+   "family": "gpu",
+   "full": "GPU minimum clock",
+   "status": "n/a",
+   "tested": [
+    "1060 at 1961-1974 MHz through decode"
+   ],
+   "result": "already at full clock",
+   "attacks": []
+  }
+ },
+ "couplings": [
+  {
+   "a": "cuda_backend",
+   "b": "fitter_placement",
+   "kind": "shifts",
+   "why": "CUDA's compute buffers differ from Vulkan's - the fitter will place differently; record the placement per order"
+  },
+  {
+   "a": "cuda_backend",
+   "b": "expert_cache",
+   "kind": "shifts",
+   "why": "CUDA graphs lower per-op cost but misses still ride the x1 link"
+  },
+  {
+   "a": "ubatch",
+   "b": "fitter_placement",
+   "kind": "conflict",
+   "why": "a bigger micro-batch grows the compute buffer the fitter must fit (measured cost to write at 2048: -1 %)"
+  },
+  {
+   "a": "ubatch",
+   "b": "prefix_cache_reuse",
+   "kind": "shifts",
+   "why": "r40 reused 397 cached tokens vs r39's 1,929 at ub 512 - unexplained"
+  },
+  {
+   "a": "op_offload_min_batch",
+   "b": "ubatch",
+   "kind": "shifts",
+   "why": "the threshold decides which batches stream; ub decides how big a streamed batch is"
+  },
+  {
+   "a": "asymmetric_cook",
+   "b": "fitter_placement",
+   "kind": "requires",
+   "why": "the cook must know which layers stay CPU-side - take them from the recorded placement"
+  },
+  {
+   "a": "mtp",
+   "b": "expert_cache",
+   "kind": "conflict",
+   "why": "community: checking drafted tokens pulls more experts over the link"
+  },
+  {
+   "a": "concurrency",
+   "b": "fitter_placement",
+   "kind": "conflict",
+   "why": "each extra slot's context and state come out of the card's memory"
+  },
+  {
+   "a": "pcie_riser",
+   "b": "expert_cache",
+   "kind": "requires",
+   "why": "the cache's misses are uploads; at x1 it is predicted to lose"
+  }
+ ]
+}

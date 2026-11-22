@@ -1,0 +1,197 @@
+# HAI's head with everything it runs beside it: the coding runner, the host-ops broker (the one container that holds
+# the Docker socket), wake-on-LAN, web search, the self-deploy canary and the door's liaison. The tablet head's half
+# (Tolkien, its watchdog and its telemetry) is examples/tablet-head.
+#
+#   1. Set up the head first with examples/one-machine (docs/quick-start.md). This stack is that same head with more
+#      beside it, under the same container name and port, so it takes the one-machine head's place and its data. From
+#      this folder, stop that head (`down` removes its container and leaves its folders), move its three folders here
+#      (your chats, memory, uploads, and the worker token your factory reports with), and copy the settings. Each line
+#      works the same in Bash and PowerShell; on Linux, if Docker made those folders (they then belong to root), run
+#      the three moves with sudo:
+#        docker compose -f ../one-machine/docker-compose.yml down
+#        mv ../one-machine/library library
+#        mv ../one-machine/state state
+#        mv ../one-machine/usercorpora usercorpora
+#        cp ../one-machine/settings.env settings.env
+#        cp sidecars.env.example sidecars.env
+#   2. Copy .env.example to .env and set STACK_DIR to this folder's absolute path: the host-ops broker runs compose
+#      against it, and a self-deploy builds the head from it.
+#   3. Make one random token per secret, each in its own file under state/secrets/ (never in a settings file), before
+#      the first start (Docker would otherwise create each missing token file as a folder). One Python line does it,
+#      the same in Bash and PowerShell: it makes only the files that are missing, so it keeps the worker token that came
+#      with the state folder and changes nothing when run again, and it writes UTF-8 (a shell redirect writes UTF-16 in
+#      Windows PowerShell 5.1):
+#        python -c "import pathlib, secrets; p = pathlib.Path('state/secrets'); p.mkdir(parents=True, exist_ok=True); [(p / n).write_text(secrets.token_hex(32), encoding='utf-8') for n in ('coding_runner_token', 'hostops_token', 'dm_token', 'worker_token') if not (p / n).exists()]"
+#   4. Make the search settings from their example, with a random secret, before the first start (SearXNG makes its
+#      own default settings.yml if none is there, without the JSON output the head asks for). One Python line, the same
+#      in Bash and PowerShell; it leaves a settings.yml that is already there alone, and git ignores the file:
+#        python -c "import pathlib, secrets; s = pathlib.Path('searxng'); t = s / 'settings.yml'; t.exists() or t.write_text((s / 'settings.example.yml').read_text(encoding='utf-8').replace('replace-with-a-random-value', secrets.token_hex(32)), encoding='utf-8')"
+#   5. From this folder:  docker compose up -d --build
+#
+# Three services are profiles and do not start with the stack: the canary is started by a self-deploy itself, the
+# door's liaison starts with --profile door once door/ is set up (door/README.md), and the Discord relay starts with
+# --profile discord once relay.env is filled in (house/discord-relay/README.md).
+name: hai-stack
+
+services:
+  hai: &hai
+    build: ../../head
+    container_name: hai
+    restart: unless-stopped
+    ports:
+      # Every interface, because factories on other machines report here. The head trusts the name a person picks,
+      # and admins are names: run this on a network of people you trust, or put the head behind a front door that
+      # signs people in and passes their name on (docs/quick-start.md, "Who can reach it").
+      - "8099:8099"
+    env_file:
+      - settings.env
+      - sidecars.env
+    environment:
+      - DOCS_DIR=/docs
+      - HAI_STATE_DIR=/state
+      - DEPLOY_COMPOSE_DIR=${STACK_DIR}   # this stack's folder on the host, for the tools that manage it
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # the wake-on-LAN sidecar runs on the host network
+    volumes:
+      - ./library:/docs
+      - ./state:/state
+      - ./usercorpora:/usercorpora
+      - ../../menu/reference:/menu:ro   # the lab's measured menu; read only when HAI_POLICY_TABLE names it
+      - ./state/secrets/coding_runner_token:/run/secrets/coding_runner_token:ro
+      - ./state/secrets/hostops_token:/run/secrets/hostops_token:ro
+      - ./state/secrets/dm_token:/run/secrets/dm_token:ro   # the Discord relay's DM token (relay.env's DM_TOKEN)
+      # With a tablet head: the folder the head and Tolkien hand work through, a share both machines mount (the head
+      # sees it at /tabjobs, Tolkien at /jobs; sidecars.env.example, "A tablet head").
+      # - <the shared folder on this machine>:/tabjobs
+    networks:
+      - hai
+
+  # The self-deploy canary: the head's own definition with a different name and port. A self-deploy builds and starts
+  # it, checks its health, then promotes the change to the live head; a crash-looping candidate stays down.
+  hai-canary:
+    <<: *hai
+    container_name: hai-canary
+    restart: "no"
+    profiles: ["canary"]
+    ports:
+      - "127.0.0.1:8101:8099"   # this machine only: the self-deploy checks it inside the stack's network
+
+  # Runs the head's test suite and HAI's coding jobs in their own workspaces. Its image installs the head's own
+  # requirements.txt, so a job's tests run in the same environment as the head's gate.
+  coding-runner:
+    build:
+      context: ../../head
+      dockerfile: coding-runner/Dockerfile
+    container_name: coding-runner
+    restart: unless-stopped
+    env_file:
+      - settings.env                    # the same OWNER_USER and ADMIN_USERS as the head: its tests read them
+      - sidecars.env
+    environment:
+      - CODING_RUNNER_STATE=/state
+      - CODING_RUNNER_SHARE_ROOTS=/app/shares
+      - CODE_LAB_BIN=/app/tools        # the lab's tools (the story detector the head's gate imports)
+    volumes:
+      - ./coding-workspaces:/app/workspaces
+      - ./coding-state:/state
+      - ./shares:/app/shares            # folders a workspace may be registered in, once you approve it
+      - ../../tools:/app/tools:ro
+      - ./state/secrets/coding_runner_token:/run/secrets/coding_runner_token:ro
+    networks:
+      - hai
+
+  # The host-ops broker: the one container with the Docker socket. A narrow, token-authed API on the stack's network
+  # (not published on the host), so the head can restart a listed container or run a self-deploy without the socket.
+  hostops:
+    image: python:3.12-slim
+    container_name: hostops
+    restart: unless-stopped
+    env_file:
+      - sidecars.env
+    environment:
+      - DEPLOY_COMPOSE_DIR=${STACK_DIR}
+      - GIT_REPO_BIND=${STACK_DIR}:/repo
+    volumes:
+      - ../../head/hostops_sidecar.py:/hostops_sidecar.py:ro
+      - ../../head/hostops_deploy.py:/hostops_deploy.py:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./state/secrets/hostops_token:/run/secrets/hostops_token:ro
+      - ../../head:/canonical:rw                    # a self-deploy promotes the reviewed source here
+      - ./coding-workspaces:/workspaces:ro          # where the reviewed source comes from
+      - ./deploy-backups:/deploy-backups:rw         # the rollback snapshots
+    command: ["python", "/hostops_sidecar.py"]
+    networks:
+      - hai
+
+  # Wake-on-LAN: magic packets must leave on the physical LAN, which a bridge container cannot do, so this one runs on
+  # the host network and the head reaches it at host.docker.internal:9119.
+  wol:
+    image: python:3.12-slim
+    container_name: wol-sidecar
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - sidecars.env
+    volumes:
+      - ../../head/wol_sidecar.py:/wol_sidecar.py:ro
+    command: ["python", "/wol_sidecar.py"]
+
+  # Web search for HAI's search tool. The head asks it for JSON, which searxng/settings.yml (step 4) turns on.
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    restart: unless-stopped
+    environment:
+      - SEARXNG_BASE_URL=http://searxng:8080/
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    networks:
+      - hai
+
+  # The door's inner half: carries messages from the door (door/) to the head under one fixed account.
+  uhura-liaison:
+    build: ../../door/liaison
+    container_name: uhura-liaison
+    restart: unless-stopped
+    profiles: ["door"]
+    env_file:
+      - door.env                        # UHURA_LIAISON_SECRET=<the secret the door was given>; door/README.md
+    environment:
+      - KIRK_URL=http://hai:8099
+      - LIAISON_STATE=/state
+    ports:
+      - "8479:8479"
+    volumes:
+      - ./liaison-state:/state
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+    pids_limit: 64
+    networks:
+      - hai
+
+  # The Discord relay (house/discord-relay): HAI's contribution approvals as buttons in a Discord channel, and the
+  # notices HAI sends to a person. A profile: copy relay.env.example to relay.env, fill it in, then
+  #   docker compose --profile discord up -d
+  # The service is named hawkadminbot because that is the relay address the head uses by default.
+  hawkadminbot:
+    build: ../../house/discord-relay
+    container_name: hawkadminbot
+    restart: unless-stopped
+    profiles: ["discord"]
+    env_file:
+      - relay.env
+    environment:
+      - HAI_BASE_URL=http://hai:8099
+      - DM_PORT=8477
+      - STATE_DIR=/state
+    volumes:
+      - ./state/discord-relay:/state
+    networks:
+      - hai
+
+networks:
+  hai:

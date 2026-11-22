@@ -1,0 +1,21 @@
+flux2_nvme:
+  base_path: F:/ComfyModels/
+  unet: unet/
+  diffusion_models: unet/
+  text_encoders: text_encoders/
+  clip: text_encoders/
+  vae: vae/
+
+generic_estore:
+  base_path: E:/ComfyUI/ComfyUI/models/
+  checkpoints: checkpoints/
+  loras: loras/
+  vae: vae/
+  embeddings: embeddings/
+  upscale_models: upscale_models/
+  # kontext wiring (2026-08-01): expose the E: store's diffusion models + flux1 text encoders to
+  # :8189 so the Kontext edit harness (p20_kontext_edit.py) can load
+  # flux1-dev-kontext_fp8_scaled + clip_l/t5xxl without copying 12 GB to F:.
+  diffusion_models: diffusion_models/
+  text_encoders: text_encoders/
+  clip: text_encoders/

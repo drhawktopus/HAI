@@ -1,0 +1,395 @@
+{
+ "mothership": {
+  "aha2025/llama-joycaption-beta-one-hf-llava:Q8_0": {
+   "caps": [
+    "tools",
+    "completion",
+    "vision"
+   ],
+   "temperature": null
+  },
+  "gemma3:27b": {
+   "caps": [
+    "completion",
+    "vision"
+   ],
+   "temperature": "1"
+  },
+  "hf.co/AtomicChat/Ornith-1.5-35B-A3B-GGUF:Q4_K_M": {
+   "caps": [
+    "tools",
+    "thinking",
+    "completion"
+   ],
+   "temperature": null
+  },
+  "hf.co/bartowski/nvidia_Nemotron-3-Nano-30B-A3B-GGUF:IQ4_XS": {
+   "caps": [
+    "tools",
+    "thinking",
+    "completion"
+   ],
+   "temperature": null
+  },
+  "huihui_ai/qwen3-vl-abliterated:32b-instruct": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools"
+   ],
+   "temperature": "1"
+  },
+  "huihui_ai/qwen3-vl-abliterated:8b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "medgemma:27b": {
+   "caps": [
+    "completion",
+    "vision"
+   ],
+   "temperature": null
+  },
+  "nemotron-3-nano:30b-iq4xs": {
+   "caps": [
+    "completion",
+    "tools",
+    "thinking"
+   ],
+   "temperature": null
+  },
+  "ornith-1.5:35b-a3b-q4km": {
+   "caps": [
+    "tools",
+    "thinking",
+    "completion"
+   ],
+   "temperature": null
+  },
+  "qwen3-coder:30b": {
+   "caps": [
+    "completion",
+    "tools"
+   ],
+   "temperature": "0.7"
+  },
+  "qwen3-vl:8b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3.5:9b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3.6:27b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3.6:35b-a3b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3.8-flash-next:iq2xxs": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3.8-flash-next:q2k": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3.8-flash-next:q2mix": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3.8:27b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3.8:27b-mtp-q4_K_M": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3:14b": {
+   "caps": [
+    "completion",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "0.6"
+  },
+  "qwen3:8b": {
+   "caps": [
+    "completion",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "0.6"
+  }
+ },
+ "bighonker": {
+  "aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M": {
+   "caps": [
+    "tools",
+    "completion",
+    "vision"
+   ],
+   "temperature": null
+  },
+  "glm-ocr:q8_0": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools"
+   ],
+   "temperature": "0"
+  },
+  "hf.co/openbmb/MiniCPM-V-4.6-gguf:Q4_K_M": {
+   "caps": [
+    "tools",
+    "thinking",
+    "completion",
+    "vision"
+   ],
+   "temperature": null
+  },
+  "hf.co/openbmb/MiniCPM5-1B-gguf:Q4_K_M": {
+   "caps": [
+    "tools",
+    "thinking",
+    "completion"
+   ],
+   "temperature": null
+  },
+  "huihui_ai/qwen3-vl-abliterated:8b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "medgemma:4b": {
+   "caps": [
+    "completion",
+    "vision"
+   ],
+   "temperature": null
+  },
+  "minicpm-v:4.6-q4km": {
+   "caps": [
+    "tools",
+    "thinking",
+    "completion",
+    "vision"
+   ],
+   "temperature": null
+  },
+  "minicpm5:1b-q4km": {
+   "caps": [
+    "tools",
+    "thinking",
+    "completion"
+   ],
+   "temperature": null
+  },
+  "nemotron-3-nano:4b": {
+   "caps": [
+    "completion",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "nomic-embed-text:latest": {
+   "caps": [
+    "embedding"
+   ],
+   "temperature": null
+  },
+  "qwen3-vl:8b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3.5:35b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3.5:9b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3:8b": {
+   "caps": [
+    "completion",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "0.6"
+  }
+ },
+ "softserve": {
+  "aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M": {
+   "caps": [
+    "tools",
+    "completion",
+    "vision"
+   ],
+   "temperature": null
+  },
+  "glm-ocr:q8_0": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools"
+   ],
+   "temperature": "0"
+  },
+  "hf.co/openbmb/MiniCPM-V-4.6-gguf:Q4_K_M": {
+   "caps": [
+    "tools",
+    "thinking",
+    "completion",
+    "vision"
+   ],
+   "temperature": null
+  },
+  "hf.co/openbmb/MiniCPM5-1B-gguf:Q4_K_M": {
+   "caps": [
+    "tools",
+    "thinking",
+    "completion"
+   ],
+   "temperature": null
+  },
+  "medgemma:4b": {
+   "caps": [
+    "completion",
+    "vision"
+   ],
+   "temperature": null
+  },
+  "minicpm-v:4.6-q4km": {
+   "caps": [
+    "tools",
+    "thinking",
+    "completion",
+    "vision"
+   ],
+   "temperature": null
+  },
+  "minicpm5:1b-q4km": {
+   "caps": [
+    "tools",
+    "thinking",
+    "completion"
+   ],
+   "temperature": null
+  },
+  "nemotron-3-nano:4b": {
+   "caps": [
+    "completion",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "nomic-embed-text:latest": {
+   "caps": [
+    "embedding"
+   ],
+   "temperature": null
+  },
+  "qwen3-vl:8b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3.5:9b": {
+   "caps": [
+    "completion",
+    "vision",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "1"
+  },
+  "qwen3:8b": {
+   "caps": [
+    "completion",
+    "tools",
+    "thinking"
+   ],
+   "temperature": "0.6"
+  }
+ }
+}

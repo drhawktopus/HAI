@@ -1,0 +1,37 @@
+# HAI's head on one machine, talking to one Ollama server.
+#
+#   1. Install Docker and Ollama. Pull a chat model and the embedding model, for example:
+#        ollama pull qwen3:8b
+#        ollama pull nomic-embed-text
+#   2. Copy settings.env.example to settings.env and point BRAIN_HOST and EMBED_HOSTS at your Ollama server (the
+#      failover and heavy roles follow BRAIN_HOST with no roster; see docs/quick-start.md). Make the library, state
+#      and usercorpora folders here yourself (quick-start step 1): on Linux, Docker makes a missing one as root.
+#   3. From this folder:  docker compose up -d --build
+#   4. Open http://localhost:8099
+#
+# This starts the head. Every role HAI normally spreads across machines (the everyday brain, the failover and the
+# heavy model) points at the same Ollama server. The head's factory runs on the machine itself, beside the card, not in
+# a container: docs/quick-start.md, "Give the head its factory" (foundry/setup_factory.py). examples/full-stack adds the
+# coding runner and the other services the head runs beside it; examples/tablet-head is Tolkien.
+services:
+  hai:
+    build: ../../head
+    container_name: hai
+    restart: unless-stopped
+    ports:
+      # This machine only. The head trusts the name a person picks, and admins are names: anyone who can reach the
+      # port can pick an admin's. To let the rest of your network use it, change this to "8099:8099" on a network of
+      # people you trust, or put it behind a front door that signs people in (docs/quick-start.md, "Who can reach it").
+      - "127.0.0.1:8099:8099"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # an Ollama on this machine, by the same name on Linux as on Docker Desktop
+    env_file: settings.env
+    volumes:
+      - ./library:/docs        # your documents: HAI reads Markdown under Reference/, LLM-Project/ and Runbook/; it
+                               # writes its own notes under Notes/ and Journal/ there, and State/profiles.json
+      - ./state:/state         # chats, memory, run records, the settings file
+      - ./usercorpora:/usercorpora   # what people upload, one folder per user
+      - ../../menu/reference:/menu:ro   # the lab's measured menu; read only when HAI_POLICY_TABLE names it
+    environment:
+      - DOCS_DIR=/docs
+      - HAI_STATE_DIR=/state

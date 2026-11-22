@@ -1,0 +1,1036 @@
+The lab's changes to the FLUX.2 trainer (FOUNDRY_AI_TOOLKIT): upstream
+https://github.com/cupertinomiranda/ai-toolkit-amd-rocm-support at 9aeb17f. In a checkout of that commit:
+    git apply ai-toolkit-lab.patch
+Markers in the code: [P20 FIX-..] (resume and start-up fixes), [P20-INSTR] (step timing, SAVE_NOW / STOP_NOW),
+[P20-BUF] (the Mistral uint4 cache's buffers). Paths read FOUNDRY_ROOT and P20_TRAIN_DIR.
+
+--- a/extensions_built_in/diffusion_models/flux2/flux2_klein_model.py
++++ b/extensions_built_in/diffusion_models/flux2/flux2_klein_model.py
+@@ -1,3 +1,4 @@
++import os
+ from .flux2_model import Flux2Model
+ from transformers import Qwen3ForCausalLM, Qwen2Tokenizer
+ from optimum.quanto import freeze
+@@ -70,7 +71,11 @@
+ 
+ class Flux2Klein4BModel(Flux2KleinModel):
+     arch = "flux2_klein_4b"
+-    flux2_klein_te_path: str = "Qwen/Qwen3-4B"
++    # LOCAL IF PRESENT, hub only as fallback -- the idiom this repo already uses for
++    # Mistral (MISTRAL_PATH in the flux2 sibling), so a run never pulls a 15.4 GB copy from the hub while the same
++    # weights sit on local disk.
++    flux2_klein_te_path: str = (os.path.join(os.environ.get("P20_TRAIN_DIR") or r"F:\flux2-train", "qwen3-4b") if os.path.isdir(os.path.join(os.environ.get("P20_TRAIN_DIR") or r"F:\flux2-train", "qwen3-4b"))
++                                else "Qwen/Qwen3-4B")
+     flux2_te_filename: str = "flux-2-klein-base-4b.safetensors"
+ 
+     def get_flux2_params(self):
+--- a/extensions_built_in/diffusion_models/flux2/flux2_model.py
++++ b/extensions_built_in/diffusion_models/flux2/flux2_model.py
+@@ -46,7 +46,13 @@
+     "use_dynamic_shifting": True,
+ }
+ 
+-MISTRAL_PATH = "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
++# P20: prefer the locally-downloaded Mistral repo over re-fetching from the hub
++MISTRAL_PATH = os.path.join(os.environ.get("P20_TRAIN_DIR") or r"F:\flux2-train", "mistral") if os.path.isdir(os.path.join(os.environ.get("P20_TRAIN_DIR") or r"F:\flux2-train", "mistral")) else "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
++# P20: pre-quantized Mistral uint4 cache (symmetric with the base flux2-dev-uint4.pt) — skips the
++# ~48GB bf16 load + CPU re-quant every launch. Built on first quant, loaded in seconds after.
++MISTRAL_UINT4_CACHE = (MISTRAL_PATH.rstrip("\\/") + "-uint4.pt") if os.path.isdir(MISTRAL_PATH) else os.path.join(os.environ.get("P20_TRAIN_DIR") or r"F:\flux2-train", "mistral-uint4.pt")
++# [P20-BUF] sidecar holding the NON-PERSISTENT buffers that state_dict() omits (rotary inv_freq x2).
++MISTRAL_UINT4_BUFFERS = MISTRAL_UINT4_CACHE[:-3] + "-buffers.pt" if MISTRAL_UINT4_CACHE.endswith(".pt") else MISTRAL_UINT4_CACHE + "-buffers.pt"
+ FLUX2_VAE_FILENAME = "ae.safetensors"
+ FLUX2_TRANSFORMER_FILENAME = "flux2-dev.safetensors"
+ 
+@@ -93,22 +99,149 @@
+ 
+     def load_te(self):
+         dtype = self.torch_dtype
+-        self.print_and_status_update("Loading Mistral")
+-
+-        text_encoder: Mistral3ForConditionalGeneration = (
+-            Mistral3ForConditionalGeneration.from_pretrained(
+-                MISTRAL_PATH,
+-                torch_dtype=dtype,
+-            )
++        _use_cache = (self.model_config.model_kwargs.get("use_mistral_cache", True)
++                      and self.model_config.quantize_te)
++        text_encoder = None
++
++        # ── P20 FIX-08 SKIP-MISTRAL-LOAD ──
++        # If resume-mode is active AND the SDTrainer embeds cache exists on disk, we know encode_prompt
++        # will never be called during boot or training (SDTrainer.hook loads embeds from cache; our
++        # configs have disable_sampling=true so no runtime encoding). Skip Mistral loading entirely
++        # (~2m 30s of torch.load + QLinear + state_dict + freeze + move) and return a stub encoder
++        # that quacks like Mistral for the .to()/.eval() calls the pipeline construction makes.
++        _p20_skip_mistral = (
++            os.environ.get('P20_RESUME_MODE') == '1'
++            and os.environ.get('P20_EMBEDS_CACHE_PATH')
++            and os.path.exists(os.environ.get('P20_EMBEDS_CACHE_PATH', ''))
+         )
+-        text_encoder.to(self.device_torch, dtype=dtype)
+-
+-        flush()
+-
+-        if self.model_config.quantize_te:
+-            self.print_and_status_update("Quantizing Mistral")
+-            quantize(text_encoder, weights=get_qtype(self.model_config.qtype))
+-            freeze(text_encoder)
++        if _p20_skip_mistral:
++            import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa
++            _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2h-SKIP [FIX-08 SKIP-MISTRAL-LOAD] gate MATCHED - returning stub text_encoder, skipping ~2m 30s of Mistral load")
++            class _P20StubTextEncoder:
++                """Minimal stub. All .to()/.eval()/.requires_grad_()/etc. are no-ops that return
++                self. Downstream code just needs .device attr + methods to not raise. Any real
++                encode_prompt() call would crash — but on resume with cached embeds, none happen."""
++                def __init__(self):
++                    self.device = torch.device('cpu')
++                    self.dtype = dtype
++                    self.training = False
++                def to(self, *a, **k):
++                    for arg in a:
++                        if isinstance(arg, (torch.device, str)):
++                            try: self.device = torch.device(arg)
++                            except Exception: pass
++                    return self
++                def eval(self): return self
++                def train(self, mode=True): self.training = mode; return self
++                def requires_grad_(self, *a, **k): return self
++                def parameters(self): return iter([])
++                def named_parameters(self): return iter([])
++                def buffers(self): return iter([])
++                def named_buffers(self): return iter([])
++                def state_dict(self, *a, **k): return {}
++                def load_state_dict(self, *a, **k): return None
++                def cpu(self): self.device = torch.device('cpu'); return self
++                def cuda(self, *a, **k): self.device = torch.device('cuda'); return self
++                def __call__(self, *a, **k):
++                    raise RuntimeError("[P20 FIX-08] _P20StubTextEncoder called for real encoding — cached embeds path failed")
++            _stub = _P20StubTextEncoder()
++            tokenizer = AutoProcessor.from_pretrained(MISTRAL_PATH)
++            _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2h-SKIP-DONE [FIX-08] tokenizer loaded, returning stub + tokenizer")
++            return _stub, tokenizer
++
++        # ── P20 FAST PATH: load the pre-quantized Mistral uint4 cache (symmetric with the base
++        # flux2-dev-uint4.pt). Skips the ~48GB bf16 load + CPU re-quant. FAIL-SAFE: any error here
++        # falls through to the proven build path below, so this can only be faster, never broken. ──
++        if _use_cache and os.path.exists(MISTRAL_UINT4_CACHE):
++            try:
++                self.print_and_status_update("Loading pre-quantized Mistral (uint4 cache)")
++                import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2h load_te Mistral cache branch entered")
++                from transformers import AutoConfig
++                _cfg = AutoConfig.from_pretrained(MISTRAL_PATH)
++                with torch.device("meta"):
++                    text_encoder = Mistral3ForConditionalGeneration(_cfg)
++                import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2i Mistral meta shell created")
++                quantize(text_encoder, weights=get_qtype(self.model_config.qtype))  # install QLinear shells
++                import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2j QLinear shells installed")
++                _sd = torch.load(MISTRAL_UINT4_CACHE, weights_only=False, map_location="cpu")
++                import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2k Mistral uint4 state_dict torch.load()ed")
++                text_encoder.load_state_dict(_sd, assign=True)
++                import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2l Mistral state_dict assigned")
++                # [P20-BUF] restore non-persistent buffers (rotary inv_freq) that state_dict() omits. Without
++                # them those tensors remain on META and the .to(device) below raises. If the sidecar is missing
++                # or incomplete we RAISE on purpose -> caller falls back to the proven build path (which writes it).
++                _sdk2 = set(text_encoder.state_dict().keys())
++                _still_meta = [_n for _n, _b in text_encoder.named_buffers()
++                               if _b is not None and _n not in _sdk2 and _b.is_meta]
++                if _still_meta:
++                    if not os.path.exists(MISTRAL_UINT4_BUFFERS):
++                        raise RuntimeError(
++                            "buffer sidecar missing (%s); %d meta buffers: %s"
++                            % (MISTRAL_UINT4_BUFFERS, len(_still_meta), _still_meta))
++                    _bsd = torch.load(MISTRAL_UINT4_BUFFERS, map_location="cpu", weights_only=False)
++                    for _n in _still_meta:
++                        if _n not in _bsd:
++                            raise RuntimeError("buffer %s absent from sidecar" % _n)
++                        _pname, _leaf = (_n.rsplit(".", 1) if "." in _n else ("", _n))
++                        _parent = text_encoder.get_submodule(_pname) if _pname else text_encoder
++                        _parent._buffers[_leaf] = _bsd[_n].clone()
++                    self.print_and_status_update(
++                        "Restored %d non-persistent buffer(s) from sidecar" % len(_still_meta))
++                del _sd
++                freeze(text_encoder)
++                flush()
++                import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2m Mistral freeze() done, about to move to GPU")
++                # [P20 FIX-06 SKIP-MISTRAL-MOVE] On resume mode with cached embeds, we do NOT need Mistral on the GPU
++                # (SDTrainer.hook_before_train_loop's cache-embed block is skipped, and disable_sampling
++                # is on so we never call encode_prompt during training). Skipping this 12GB CPU->GPU move
++                # saves ~1m 26s per launch.
++                if os.environ.get('P20_RESUME_MODE') == '1':
++                    _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2n [FIX-06] SKIPPED text_encoder.to(device_torch) (P20_RESUME_MODE=1)")
++                else:
++                    text_encoder.to(self.device_torch)
++                    flush()
++                    _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2n Mistral moved to GPU (text_encoder.to(device_torch))")
++            except Exception as _e:
++                self.print_and_status_update(f"Mistral cache load FAILED ({_e!r}) -> rebuilding from bf16")
++                text_encoder = None
++
++        # ── BUILD PATH: load bf16 + quantize on CPU (dodges the c10 abort), then SAVE the cache once. ──
++        if text_encoder is None:
++            self.print_and_status_update("Loading Mistral")
++            text_encoder = Mistral3ForConditionalGeneration.from_pretrained(MISTRAL_PATH, torch_dtype=dtype)
++            flush()
++            if self.model_config.quantize_te:
++                # P20: quantize on CPU FIRST. Moving the full ~48GB bf16 Mistral onto the 24GB GPU
++                # before quantizing HIP-OOM-crashes (c10 abort). Quantize on CPU, then only the
++                # ~12GB uint4 result touches the GPU.
++                self.print_and_status_update("Quantizing Mistral (on CPU)")
++                quantize(text_encoder, weights=get_qtype(self.model_config.qtype))
++                freeze(text_encoder)
++                flush()
++                if _use_cache and not os.path.exists(MISTRAL_UINT4_CACHE):
++                    try:
++                        self.print_and_status_update("Saving Mistral uint4 cache (one-time)")
++                        torch.save(text_encoder.state_dict(), MISTRAL_UINT4_CACHE)
++                    except Exception as _e:
++                        self.print_and_status_update(f"Mistral cache save skipped ({_e!r})")
++                # [P20-BUF] persist the non-persistent buffers alongside the cache. Captured from the REAL built
++                # model here, so the values are correct by construction (never hand-recomputed). Gated on the
++                # sidecar's own existence so it is written even when the main cache already exists.
++                if _use_cache and not os.path.exists(MISTRAL_UINT4_BUFFERS):
++                    try:
++                        _sdk = set(text_encoder.state_dict().keys())
++                        _bufs = {_n: _b.detach().cpu().clone()
++                                 for _n, _b in text_encoder.named_buffers()
++                                 if _b is not None and _n not in _sdk}
++                        if _bufs:
++                            torch.save(_bufs, MISTRAL_UINT4_BUFFERS)
++                            self.print_and_status_update(
++                                "Saved %d non-persistent buffer(s) -> %s" % (len(_bufs), MISTRAL_UINT4_BUFFERS))
++                    except Exception as _e:
++                        self.print_and_status_update("Mistral buffer sidecar save skipped (%r)" % (_e,))
++                text_encoder.to(self.device_torch)
++            else:
++                text_encoder.to(self.device_torch, dtype=dtype)
+             flush()
+ 
+         if (
+@@ -125,6 +258,7 @@
+         return text_encoder, tokenizer
+ 
+     def load_model(self):
++        import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2a load_model() entered")
+         dtype = self.torch_dtype
+         self.print_and_status_update("Loading Flux2 model")
+         # will be updated if we detect a existing checkpoint in training folder
+@@ -135,37 +269,81 @@
+         with torch.device("meta"):
+             transformer = Flux2(self.get_flux2_params())
+ 
+-        # use local path if provided
+-        if os.path.exists(os.path.join(transformer_path, self.flux2_te_filename)):
+-            transformer_path = os.path.join(transformer_path, self.flux2_te_filename)
+-
+-        if not os.path.exists(transformer_path):
+-            # assume it is from the hub
+-            transformer_path = huggingface_hub.hf_hub_download(
+-                repo_id=model_path,
+-                filename=self.flux2_te_filename,
+-                token=HF_TOKEN,
+-            )
+-
+-        transformer_state_dict = load_file(transformer_path, device="cpu")
+-
+-        # cast to dtype
+-        for key in transformer_state_dict:
+-            transformer_state_dict[key] = transformer_state_dict[key].to(dtype)
+-
+-        transformer.load_state_dict(transformer_state_dict, assign=True)
+-
+-        transformer.to(self.quantize_device, dtype=dtype)
+-
+-        if self.model_config.quantize:
+-            # patch the state dict method
++        # P20 DECOUPLED uint4 CACHE: safetensors' mmap load_file crashes natively on the 64GB bf16 here,
++        # and we pre-quantized to uint4 so we don't re-quantize every run. If a uint4 cache sits next to the
++        # model, load it and skip both load_file and quantize_model.
++        _uint4_cache = os.path.join(model_path, "flux2-dev-uint4.pt")
++        # P20: cache branch OFF by default (it bypasses quantize_model's training setup + GPU placement -> CPU-bound hang).
++        # Set model_kwargs.use_uint4_cache=true to re-enable once decoupled training is solved. Default = ai-toolkit's proven quantize path.
++        if self.model_config.model_kwargs.get("use_uint4_cache", False) and os.path.exists(_uint4_cache):
++            self.print_and_status_update("Loading pre-quantized uint4 base (decoupled cache)")
++            import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2b about to torch.load base uint4 cache")
++            _sd = torch.load(_uint4_cache, weights_only=False, map_location="cpu")
++            import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2c base uint4 state_dict torch.load()ed from disk")
++            transformer.load_state_dict(_sd, assign=True, strict=False)
++            import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2d base state_dict assigned to transformer")
++            del _sd
++            # replicate quantize_model's save hook so LoRA/base saving dequantizes correctly
+             patch_dequantization_on_save(transformer)
+-            self.print_and_status_update("Quantizing Transformer")
+-            quantize_model(self, transformer)
++            # [P20 FIX-01 SKIP-QDEV-MOVE]: under low_vram the very next block moves transformer.to("cpu") -> a
++            # CPU->GPU->CPU round trip on ~19GB of quantized weights (~7s). Skip the GPU move
++            # entirely when low_vram will park it. The base is already on CPU here (torch.load
++            # loaded to map_location="cpu"); leave it there and let SDTrainer's [P20] block do
++            # the resident move at the end of hook_before_train_loop.
++            if not self.model_config.low_vram:
++                transformer.to(self.quantize_device)
+             flush()
++            import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2e base transformer.to({'quantize_device=' + str(self.quantize_device) if not self.model_config.low_vram else 'SKIPPED (low_vram)'}) done")
+         else:
+-            transformer.to(self.device_torch, dtype=dtype)
+-        flush()
++            # use local path if provided
++            if os.path.exists(os.path.join(transformer_path, self.flux2_te_filename)):
++                transformer_path = os.path.join(transformer_path, self.flux2_te_filename)
++
++            if not os.path.exists(transformer_path):
++                # assume it is from the hub
++                transformer_path = huggingface_hub.hf_hub_download(
++                    repo_id=model_path,
++                    filename=self.flux2_te_filename,
++                    token=HF_TOKEN,
++                )
++
++            # P20: manual non-mmap read — safetensors' mmap load_file crashes natively on the 64GB bf16 here.
++            import struct as _struct, json as _json
++            _DT = {'BF16': torch.bfloat16, 'F16': torch.float16, 'F32': torch.float32, 'F64': torch.float64,
++                   'I64': torch.int64, 'I32': torch.int32, 'I16': torch.int16, 'I8': torch.int8, 'U8': torch.uint8,
++                   'F8_E4M3': torch.float8_e4m3fn, 'F8_E5M2': torch.float8_e5m2, 'BOOL': torch.bool}
++            transformer_state_dict = {}
++            with open(transformer_path, 'rb') as _fh:
++                _n = _struct.unpack('<Q', _fh.read(8))[0]
++                _hdr = _json.loads(_fh.read(_n)); _base = 8 + _n
++                for _k, _meta in _hdr.items():
++                    if _k == '__metadata__':
++                        continue
++                    _o0, _o1 = _meta['data_offsets']
++                    _fh.seek(_base + _o0)
++                    _raw = _fh.read(_o1 - _o0)
++                    transformer_state_dict[_k] = torch.frombuffer(bytearray(_raw), dtype=_DT[_meta['dtype']]).reshape(_meta['shape'])
++
++            # cast to dtype
++            for key in transformer_state_dict:
++                transformer_state_dict[key] = transformer_state_dict[key].to(dtype)
++
++            transformer.load_state_dict(transformer_state_dict, assign=True)
++            del transformer_state_dict  # P20: free the 64GB bf16 so quantize_model can release it + Mistral (48GB) fits the RAM+pagefile budget
++            import gc as _gc; _gc.collect()
++
++            if self.model_config.quantize:
++                # P20: quantize on CPU. The original `to(quantize_device)` moved the full 64GB bf16 onto the 24GB GPU
++                # BEFORE quantizing -> ~38GB alloc -> OOM. The model is already on CPU from the manual load, so
++                # quantize_model runs in place there; ai-toolkit's low_vram/pipe flow then moves the ~19GB uint4 to the
++                # GPU (same CPU-quant pattern that worked for Mistral + the round-trip).
++                patch_dequantization_on_save(transformer)
++                self.print_and_status_update("Quantizing Transformer (on CPU)")
++                quantize_model(self, transformer)
++                flush()
++            else:
++                transformer.to(self.device_torch, dtype=dtype)
++            flush()
+ 
+         if (
+             self.model_config.layer_offloading
+@@ -180,8 +358,11 @@
+         if self.model_config.low_vram:
+             self.print_and_status_update("Moving transformer to CPU")
+             transformer.to("cpu")
+-
++            import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2f base transformer.to('cpu') done (low_vram park)")
++
++        import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2g about to load_te()")
+         text_encoder, tokenizer = self.load_te()
++        import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2o load_te() returned")
+ 
+         self.print_and_status_update("Loading VAE")
+         vae_path = self.model_config.vae_path
+@@ -210,6 +391,7 @@
+             vae_state_dict[key] = vae_state_dict[key].to(dtype)
+ 
+         vae.load_state_dict(vae_state_dict, assign=True)
++        import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2p VAE loaded + state_dict assigned")
+ 
+         self.noise_scheduler = Flux2Model.get_train_scheduler()
+ 
+@@ -233,11 +415,21 @@
+         tokenizer = [pipe.tokenizer]
+ 
+         flush()
++        # [P20 FIX-06 SKIP-MISTRAL-MOVE] Also skip the load_model-side text_encoder.to(device_torch) at line 344
++        # under resume-mode (it's the second Mistral CPU->GPU move that follows load_te).
+         # just to make sure everything is on the right device and dtype
+-        text_encoder[0].to(self.device_torch)
++        if os.environ.get('P20_RESUME_MODE') == '1':
++            import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2q [FIX-06] SKIPPED text_encoder[0].to(device_torch) (P20_RESUME_MODE=1)")
++        else:
++            text_encoder[0].to(self.device_torch)
+         text_encoder[0].requires_grad_(False)
+         text_encoder[0].eval()
+-        pipe.transformer = pipe.transformer.to(self.device_torch)
++        # P20: under low_vram, DO NOT move the transformer to the GPU here. Mistral (~12GB uint4) is resident on
++        # the card for the embedding cache; a real 19GB base move would collide -> OOM (the old broken quantize
++        # path masked this by never actually transferring). Leave the base parked on CPU; SDTrainer's [P20] block
++        # moves the (cache-loaded) base RESIDENT after Mistral unloads. Non-low_vram path is unchanged.
++        if not self.model_config.low_vram:
++            pipe.transformer = pipe.transformer.to(self.device_torch)
+         flush()
+ 
+         # save it to the model class
+@@ -424,6 +616,13 @@
+ 
+             cast_dtype = self.model.dtype
+ 
++        if not getattr(self, '_p20_fwd_done', False):
++            self._p20_fwd_done = True
++            try:
++                _f20, _tt20 = torch.cuda.mem_get_info()
++                print(f"[P20-FWD] first forward: VRAM={round((_tt20-_f20)/1e9,2)}GB model_dev={str(next(self.model.parameters()).device)}", flush=True)
++            except Exception as _e20:
++                print(f"[P20-FWD] probe err {_e20!r}", flush=True)
+         packed_noise_pred = self.transformer(
+             x=img_input.to(self.device_torch, cast_dtype),
+             x_ids=img_input_ids.to(self.device_torch),
+--- a/extensions_built_in/sd_trainer/SDTrainer.py
++++ b/extensions_built_in/sd_trainer/SDTrainer.py
+@@ -243,30 +243,65 @@
+             self.taesd.requires_grad_(False)
+ 
+     def hook_before_train_loop(self):
++        import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP9 SDTrainer.hook_before_train_loop() enter (calling super)")
+         super().hook_before_train_loop()
++        import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP9b Base super() returned")
+         if self.is_caching_text_embeddings:
+             # make sure model is on cpu for this part so we don't oom.
+-            self.sd.unet.to('cpu')
+-        
++            # [P20 FIX-02 UNET-CPU-GUARD]: quanto uint4 .to('cpu') on an already-CPU model is NOT a no-op — costs
++            # ~1m 30s on the 19GB flux2 base. Guard: skip the move if the
++            # UNet's first parameter already reports CPU.
++            try:
++                _cur = next(self.sd.unet.parameters()).device.type
++            except StopIteration:
++                _cur = None
++            if _cur != 'cpu':
++                self.sd.unet.to('cpu')
++                import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP9c self.sd.unet.to('cpu') done (from {_cur})")
++            else:
++                import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP9c self.sd.unet.to('cpu') SKIPPED (already on cpu)")
++
+         # cache unconditional embeds (blank prompt)
+-        with torch.no_grad():
+-            kwargs = {}
+-            if self.sd.encode_control_in_text_embeddings:
+-                # just do a blank image for unconditionals
+-                control_image = torch.zeros((1, 3, 224, 224), device=self.sd.device_torch, dtype=self.sd.torch_dtype)
+-                if self.sd.has_multiple_control_images:
+-                    control_image = [control_image]
+-                
+-                kwargs['control_images'] = control_image
+-            self.unconditional_embeds = self.sd.encode_prompt(
+-                [self.train_config.unconditional_prompt],
+-                long_prompts=self.do_long_prompts,
+-                **kwargs
+-            ).to(
+-                self.device_torch,
+-                dtype=self.sd.torch_dtype
+-            ).detach()
+-        
++        # [P20 FIX-05 EMBEDS-CACHE EXT + FIX-07 GLOBAL-EMBEDS-CACHE]
++        # Round-4 measurement showed this encode_prompt call was OUTSIDE the block FIX-05 originally
++        # skipped, so on resume it still triggered Mistral CPU->GPU (1m 16s cost surfaced here).
++        # Cache unconditional_embeds too so resume path never touches Mistral. Cache path is now
++        # GLOBAL (the foundry's cond cache, p20_embeds_<trigger>.pt) set by FIX-04 via env var.
++        import os as _p20_os_early
++        _p20_uc_cache = _p20_os_early.environ.get('P20_EMBEDS_CACHE_PATH', '')
++        _p20_uc_key = f"{self.train_config.unconditional_prompt}|{self.trigger_word or ''}"
++        _p20_uc_loaded = False
++        if _p20_os_early.environ.get('P20_RESUME_MODE') == '1' and _p20_uc_cache and _p20_os_early.path.exists(_p20_uc_cache):
++            try:
++                import torch as _p20_torch
++                _p20_uc_cached = _p20_torch.load(_p20_uc_cache, weights_only=False, map_location=self.device_torch)
++                if _p20_uc_cached.get('_p20_key') == _p20_uc_key and 'unconditional' in _p20_uc_cached:
++                    self.unconditional_embeds = _p20_uc_cached['unconditional']
++                    _p20_uc_loaded = True
++                    import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP9d-FAST [FIX-05 EXT] unconditional_embeds LOADED from global cache")
++            except Exception as _p20_e:
++                import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP9d-FAIL [FIX-05 EXT] cache load of unconditional_embeds failed ({_p20_e!r}) - falling through to encode")
++
++        if not _p20_uc_loaded:
++            with torch.no_grad():
++                kwargs = {}
++                if self.sd.encode_control_in_text_embeddings:
++                    # just do a blank image for unconditionals
++                    control_image = torch.zeros((1, 3, 224, 224), device=self.sd.device_torch, dtype=self.sd.torch_dtype)
++                    if self.sd.has_multiple_control_images:
++                        control_image = [control_image]
++
++                    kwargs['control_images'] = control_image
++                self.unconditional_embeds = self.sd.encode_prompt(
++                    [self.train_config.unconditional_prompt],
++                    long_prompts=self.do_long_prompts,
++                    **kwargs
++                ).to(
++                    self.device_torch,
++                    dtype=self.sd.torch_dtype
++                ).detach()
++                import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP9d unconditional_embeds encoded via self.sd.encode_prompt() (may have moved Mistral)")
++
+         if self.train_config.do_prior_divergence:
+             self.do_prior_prediction = True
+         # move vae to device if we did not cache latents
+@@ -277,7 +312,9 @@
+             # offload it. Already cached
+             self.sd.vae.to('cpu')
+             flush()
++        import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP9e VAE handling done")
+         add_all_snr_to_noise_scheduler(self.sd.noise_scheduler, self.device_torch)
++        import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP9f add_all_snr_to_noise_scheduler done")
+         if self.adapter is not None:
+             self.adapter.to(self.device_torch)
+ 
+@@ -309,44 +346,133 @@
+ 
+         # handle unload text encoder
+         if self.train_config.unload_text_encoder or self.is_caching_text_embeddings:
+-            print_acc("Caching embeddings and unloading text encoder")
+-            with torch.no_grad():
+-                if self.train_config.train_text_encoder:
+-                    raise ValueError("Cannot unload text encoder if training text encoder")
+-                # cache embeddings
+-                self.sd.text_encoder_to(self.device_torch)
+-                encode_kwargs = {}
+-                if self.sd.encode_control_in_text_embeddings:
+-                    # just do a blank image for unconditionals
+-                    control_image = torch.zeros((1, 3, 224, 224), device=self.sd.device_torch, dtype=self.sd.torch_dtype)
+-                    if self.sd.has_multiple_control_images:
+-                        control_image = [control_image]
+-                    encode_kwargs['control_images'] = control_image
+-                self.cached_blank_embeds = self.sd.encode_prompt("", **encode_kwargs)
+-                if self.trigger_word is not None:
+-                    self.cached_trigger_embeds = self.sd.encode_prompt(self.trigger_word, **encode_kwargs)
+-                if self.train_config.diff_output_preservation:
+-                    self.diff_output_preservation_embeds = self.sd.encode_prompt(self.train_config.diff_output_preservation_class)
+-                
+-                self.cache_sample_prompts()
+-                
+-                print_acc("\n***** UNLOADING TEXT ENCODER *****")
+-                if self.is_caching_text_embeddings:
+-                    print_acc("Embeddings cached to disk. We dont need the text encoder anymore")
+-                else:
+-                    print_acc("This will train only with a blank prompt or trigger word, if set")
+-                    print_acc("If this is not what you want, remove the unload_text_encoder flag")
+-                print_acc("***********************************")
+-                print_acc("")
+-
+-                # unload the text encoder
+-                if self.is_caching_text_embeddings:
+-                    unload_text_encoder(self.sd)
+-                else:
+-                    # todo once every model is tested to work, unload properly. Though, this will all be merged into one thing.
+-                    # keep legacy usage for now. 
+-                    self.sd.text_encoder_to("cpu")
+-                flush()
++            import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP10 about to cache blank+trigger embeds (may move Mistral to GPU)")
++            # [P20 FIX-05 EMBEDS-CACHE] Resume-mode fast path: load cached SDTrainer embeds from disk, skip the
++            # whole encode + unload_text_encoder block. Saves ~2m 17s (unload) + Mistral CPU->GPU
++            # cycle (already skipped by FIX I). On first run we fall through, encode as usual, and
++            # persist the cache to disk at the end for next resume.
++            # [P20 FIX-07 GLOBAL-EMBEDS-CACHE] Use the global cache path set by FIX-04 (env var),
++            # not save_root. Cache lives in the foundry's cond cache (p20_embeds_<trigger>.pt) and
++            # is shared across all training projects for the same trigger word.
++            _p20_embeds_cache = os.environ.get('P20_EMBEDS_CACHE_PATH') or os.path.join(self.save_root, 'p20_sd_trainer_embeds.pt')
++            _p20_key = f"{self.train_config.unconditional_prompt}|{self.trigger_word or ''}"
++            _p20_resume_mode = os.environ.get('P20_RESUME_MODE') == '1'
++            _p20_cache_loaded = False
++            if _p20_resume_mode and os.path.exists(_p20_embeds_cache):
++                try:
++                    import torch as _p20_torch
++                    _p20_cached = _p20_torch.load(_p20_embeds_cache, weights_only=False, map_location=self.device_torch)
++                    if _p20_cached.get('_p20_key') == _p20_key:
++                        self.cached_blank_embeds = _p20_cached['blank']
++                        if self.trigger_word is not None and 'trigger' in _p20_cached:
++                            self.cached_trigger_embeds = _p20_cached['trigger']
++                        if self.train_config.diff_output_preservation and 'dop' in _p20_cached:
++                            self.diff_output_preservation_embeds = _p20_cached['dop']
++                        _p20_cache_loaded = True
++                        print_acc(f"[P20 FIX-05 EMBEDS-CACHE] loaded cached SDTrainer embeds from {_p20_embeds_cache} — skipping encode + unload block")
++                        print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP10-FAST cached embeds loaded, encode+unload SKIPPED")
++                    else:
++                        print_acc(f"[P20 FIX-05 EMBEDS-CACHE] cache key mismatch (cached={_p20_cached.get('_p20_key')!r}, want={_p20_key!r}) — falling back to encode")
++                except Exception as _p20_e:
++                    print_acc(f"[P20 FIX-05 EMBEDS-CACHE] cache load failed ({_p20_e!r}) — falling back to encode")
++
++            if not _p20_cache_loaded:
++                print_acc("Caching embeddings and unloading text encoder")
++                with torch.no_grad():
++                    if self.train_config.train_text_encoder:
++                        raise ValueError("Cannot unload text encoder if training text encoder")
++                    # cache embeddings
++                    self.sd.text_encoder_to(self.device_torch)
++                    encode_kwargs = {}
++                    if self.sd.encode_control_in_text_embeddings:
++                        # just do a blank image for unconditionals
++                        control_image = torch.zeros((1, 3, 224, 224), device=self.sd.device_torch, dtype=self.sd.torch_dtype)
++                        if self.sd.has_multiple_control_images:
++                            control_image = [control_image]
++                        encode_kwargs['control_images'] = control_image
++                    self.cached_blank_embeds = self.sd.encode_prompt("", **encode_kwargs)
++                    if self.trigger_word is not None:
++                        self.cached_trigger_embeds = self.sd.encode_prompt(self.trigger_word, **encode_kwargs)
++                    if self.train_config.diff_output_preservation:
++                        self.diff_output_preservation_embeds = self.sd.encode_prompt(self.train_config.diff_output_preservation_class)
++
++                    self.cache_sample_prompts()
++
++                    # [P20 FIX-05 EMBEDS-CACHE + FIX-05 EXT + FIX-07 GLOBAL]
++                    # Persist embeds (including unconditional_embeds from WP9d) to disk so every
++                    # future run for this trigger skips both encode paths + unload.
++                    try:
++                        _p20_to_save = {
++                            '_p20_key': _p20_key,
++                            'blank': self.cached_blank_embeds,
++                            'unconditional': self.unconditional_embeds,
++                        }
++                        if self.trigger_word is not None:
++                            _p20_to_save['trigger'] = self.cached_trigger_embeds
++                        if self.train_config.diff_output_preservation:
++                            _p20_to_save['dop'] = self.diff_output_preservation_embeds
++                        import torch as _p20_torch
++                        _p20_torch.save(_p20_to_save, _p20_embeds_cache)
++                        print_acc(f"[P20 FIX-05 EMBEDS-CACHE] saved SDTrainer embeds cache -> {_p20_embeds_cache} (future runs will skip encode+unload)")
++                    except Exception as _p20_e:
++                        print_acc(f"[P20 FIX-05 EMBEDS-CACHE] cache save failed ({_p20_e!r}) — not fatal, next launch will re-encode")
++
++                    print_acc("\n***** UNLOADING TEXT ENCODER *****")
++                    if self.is_caching_text_embeddings:
++                        print_acc("Embeddings cached to disk. We dont need the text encoder anymore")
++                    else:
++                        print_acc("This will train only with a blank prompt or trigger word, if set")
++                        print_acc("If this is not what you want, remove the unload_text_encoder flag")
++                    print_acc("***********************************")
++                    print_acc("")
++
++                    # unload the text encoder
++                    import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP10a about to unload_text_encoder / text_encoder_to('cpu')")
++                    if self.is_caching_text_embeddings:
++                        unload_text_encoder(self.sd)
++                    else:
++                        # todo once every model is tested to work, unload properly. Though, this will all be merged into one thing.
++                        # keep legacy usage for now.
++                        self.sd.text_encoder_to("cpu")
++                    import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP10b unload_text_encoder / text_encoder_to('cpu') done")
++                    flush()
++            import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP11 TE unloaded, about to [P20] move base to GPU")
++
++            # P20: low_vram parks the base on CPU during TE-caching (so a 19GB base + the 24B Mistral
++            # don't collide on a 24GB card) but never brings it back -> QLoRA of a big base (Flux.2 32B)
++            # silently trains on CPU. The TE is unloaded now, so the VRAM is free: move the base back to
++            # the GPU for RESIDENT training. Gated to the resident config so other models/configs are untouched.
++            if self.model_config.low_vram and not self.model_config.layer_offloading:
++                def _p20_dev(m):
++                    try:
++                        return str(next(m.parameters()).device)
++                    except StopIteration:
++                        return "NO-PARAMS"
++                def _p20_vram():
++                    _f, _t = torch.cuda.mem_get_info()
++                    return round((_t - _f) / 1e9, 2)
++                print_acc(f"[P20] pre-move: dev={_p20_dev(self.sd.model)} VRAM={_p20_vram()}GB device_torch={self.sd.device_torch} type={type(self.sd.model).__name__}")
++                try:
++                    self.sd.model.to(self.sd.device_torch)
++                    flush()
++                    print_acc(f"[P20] post-move(.to): dev={_p20_dev(self.sd.model)} VRAM={_p20_vram()}GB")
++                    # P20 DIAG+FIX: .to() has been flipping param.device to cuda WITHOUT transferring the quanto
++                    # packed bytes (VRAM stays idle -> CPU training). If VRAM didn't rise, force an explicit
++                    # per-parameter/-buffer data move, which relocates the actual QTensor storage.
++                    if _p20_vram() < 5.0:
++                        print_acc("[P20] VRAM still low after .to() -> forcing per-parameter data move")
++                        _mv = 0
++                        with torch.no_grad():
++                            for _n, _p in self.sd.model.named_parameters():
++                                if _p.device.type != 'cuda':
++                                    _p.data = _p.data.to(self.sd.device_torch); _mv += 1
++                            for _n, _b in self.sd.model.named_buffers():
++                                if _b.device.type != 'cuda':
++                                    _b.data = _b.data.to(self.sd.device_torch); _mv += 1
++                        flush()
++                        print_acc(f"[P20] post-force: dev={_p20_dev(self.sd.model)} VRAM={_p20_vram()}GB moved={_mv} tensors")
++                except Exception as _p20e:
++                    print_acc(f"[P20] base->GPU after TE unload FAILED: {_p20e!r}")
+         
+         if self.train_config.blank_prompt_preservation and self.cached_blank_embeds is None:
+             # make sure we have this if not unloading
+--- a/jobs/process/BaseSDTrainProcess.py
++++ b/jobs/process/BaseSDTrainProcess.py
+@@ -1519,6 +1519,45 @@
+         # torch.autograd.set_detect_anomaly(True)
+         # run base process run
+         BaseTrainProcess.run(self)
++        import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP1 run() start")
++        # [P20 FIX-04 RESUME-FLAG + FIX-07 GLOBAL-EMBEDS-CACHE]
++        # Cache SDTrainer embeds in a GLOBAL location keyed by trigger word (not save_root). The
++        # embeds depend on (Mistral weights, unconditional_prompt, trigger_word) - not on the
++        # training project - so a cross-project cache means first-ever run of a trigger populates
++        # once, every subsequent run for that trigger (any dir, any resume/fresh) skips the
++        # expensive encode+unload path. Also expose P20_EMBEDS_CACHE_PATH so SDTrainer and
++        # flux2_model can read the same path, and P20_MISTRAL_CACHE_HIT so FIX-08 can decide
++        # whether it is safe to skip Mistral loading entirely.
++        _p20_cond_dir = os.path.join(os.environ.get("FOUNDRY_ROOT") or r"F:\foundry", "var", "cache", "cond_cache")
++        try:
++            os.makedirs(_p20_cond_dir, exist_ok=True)
++        except Exception:
++            pass
++        _p20_trig = ''.join(c if c.isalnum() or c in '-_' else '_' for c in (self.trigger_word or 'default'))
++        _p20_embeds = os.path.join(_p20_cond_dir, f'p20_embeds_{_p20_trig}.pt')
++        _p20_mistral_cache = os.path.join(os.environ.get("P20_TRAIN_DIR") or r"F:\flux2-train", "mistral-uint4.pt")
++        try:
++            _p20_root = self.save_root
++            _p20_has_ckpts = os.path.isdir(_p20_root) and any(
++                (f.startswith(self.name) and f.endswith('.safetensors'))
++                for f in os.listdir(_p20_root)
++            )
++            _p20_has_embeds = os.path.exists(_p20_embeds)
++            _p20_has_mist = os.path.exists(_p20_mistral_cache)
++            # [P20 CACHE-GATE] Gate on the CACHES, not on whether this run has checkpoints.
++            # The embeds cache is global and trigger-keyed (FIX-07), valid for any run with that trigger, so a fresh
++            # run with a good cache reuses it instead of paying a 14 GB Mistral load + 67 s GPU move to rebuild
++            # embeddings already on disk (~2 min per cold boot). The trigger-keyed filename is what makes reuse
++            # safe; checkpoints are irrelevant.
++            os.environ['P20_RESUME_MODE'] = '1' if (_p20_has_embeds and _p20_has_mist) else '0'
++            os.environ['P20_EMBEDS_CACHE_PATH'] = _p20_embeds
++            os.environ['P20_MISTRAL_CACHE_HIT'] = '1' if _p20_has_mist else '0'
++            print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} FIX-04 RESUME-FLAG: P20_RESUME_MODE={os.environ['P20_RESUME_MODE']} (ckpts={_p20_has_ckpts}, embeds_cache={_p20_has_embeds} @ {_p20_embeds}, mistral_cache={_p20_has_mist})")
++        except Exception as _p20_e:
++            os.environ['P20_RESUME_MODE'] = '0'
++            os.environ['P20_EMBEDS_CACHE_PATH'] = _p20_embeds
++            os.environ['P20_MISTRAL_CACHE_HIT'] = '0'
++            print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} FIX-04 RESUME-FLAG: P20_RESUME_MODE=0 (detection failed: {_p20_e!r})")
+         params = []
+ 
+         ### HOOK ###
+@@ -1575,7 +1614,8 @@
+         self.hook_after_sd_init_before_load()
+         # run base sd process run
+         self.sd.load_model()
+-        
++        import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP2 sd.load_model() done")
++
+         # compile the model if needed
+         if self.model_config.compile:
+             try:
+@@ -1759,17 +1799,28 @@
+ 
+ 
+                 # todo switch everything to proper mixed precision like this
++                # [P20 FIX-09 probes] narrow the "base moves to cuda" mystery to a specific call.
++                def _p20_bdev(m):
++                    try:
++                        return str(next(m.parameters()).device) if m is not None else 'no-unet'
++                    except Exception:
++                        return 'unknown'
++                import datetime as _p20_dt
++                print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP3-N1 base BEFORE network.force_to = {_p20_bdev(unet)}")
+                 self.network.force_to(self.device_torch, dtype=torch.float32)
++                print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP3-N2 base AFTER network.force_to = {_p20_bdev(unet)}")
+                 # give network to sd so it can use it
+                 self.sd.network = self.network
+                 self.network._update_torch_multiplier()
+ 
++                print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP3-N3 base BEFORE network.apply_to = {_p20_bdev(unet)}")
+                 self.network.apply_to(
+                     text_encoder,
+                     unet,
+                     self.train_config.train_text_encoder,
+                     self.train_config.train_unet
+                 )
++                print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP3-N4 base AFTER network.apply_to = {_p20_bdev(unet)}")
+ 
+                 # we cannot merge in if quantized
+                 if self.model_config.quantize or self.model_config.layer_offloading:
+@@ -1790,8 +1841,21 @@
+                         num_replaced=len(self.network.get_all_modules()),
+                     )
+ 
++                # [P20 FIX-09 instrumentation]: per-step device probes inside network setup to
++                # pinpoint EXACTLY which call moves the base to cuda. Round 3/4 showed base on
++                # cuda by WP9c despite low_vram. Once we know the call, a follow-up round can
++                # guard it with `if not low_vram:` or move base back cheaply pre-hook. For now
++                # this is DATA-ONLY; behavior is unchanged.
++                def _p20_bdev(m):
++                    try:
++                        return str(next(m.parameters()).device) if m is not None else 'no-unet'
++                    except Exception:
++                        return 'unknown'
++                import datetime as _p20_dt
++                print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP3a1 base device BEFORE prepare_grad_etc = {_p20_bdev(unet)}")
+                 self.network.prepare_grad_etc(text_encoder, unet)
+                 flush()
++                print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP3a2 base device AFTER prepare_grad_etc = {_p20_bdev(unet)}")
+ 
+                 # LyCORIS doesnt have default_lr
+                 config = {
+@@ -1817,6 +1881,7 @@
+                 if self.named_lora:
+                     lora_name = f"{lora_name}_LoRA"
+ 
++                import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP3 network created + apply_to(), about to resume-load")
+                 latest_save_path = self.get_latest_save_path(lora_name)
+                 extra_weights = None
+                 if latest_save_path is not None:
+@@ -1824,6 +1889,7 @@
+                     print_acc(f"Loading from {latest_save_path}")
+                     extra_weights = self.load_weights(latest_save_path)
+                     self.network.multiplier = 1.0
++                    import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP4 load_weights() done")
+                 
+                 if self.network_config.layer_offloading:
+                     MemoryManager.attach(
+@@ -1942,7 +2008,8 @@
+         optimizer = get_optimizer(self.params, optimizer_type, learning_rate=self.train_config.lr,
+                                   optimizer_params=self.train_config.optimizer_params)
+         self.optimizer = optimizer
+-        
++        import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP5 get_optimizer() done")
++
+         # set it to do paramiter swapping
+         if self.train_config.do_paramiter_swapping:
+             # only works for adafactor, but it should have thrown an error prior to this otherwise
+@@ -1973,6 +2040,7 @@
+                     optimizer.load_state_dict(optimizer_state_dict)
+                     del optimizer_state_dict
+                     flush()
++                    import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP6 optimizer.load_state_dict() done")
+                 except Exception as e:
+                     print_acc(f"Failed to load optimizer state from {optimizer_state_file_path}")
+                     print_acc(e)
+@@ -1999,6 +2067,7 @@
+             **lr_scheduler_params
+         )
+         self.lr_scheduler = lr_scheduler
++        import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7 lr_scheduler ready")
+ 
+         ### HOOk ###
+         self.before_dataset_load()
+@@ -2010,9 +2079,11 @@
+                                                                 self.sd)
+ 
+         flush()
++        import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP8 dataloader init done (Dataset+Preprocess+Buckets+CacheLatents+CacheTextEmbeds)")
+         self.last_save_step = self.step_num
+         ### HOOK ###
+         self.hook_before_train_loop()
++        import datetime as _p20_dt; print_acc(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP12 hook_before_train_loop() returned (ready to train)")
+ 
+         if self.has_first_sample_requested and self.step_num <= 1 and not self.train_config.disable_sampling:
+             print_acc("Generating first sample from first sample config")
+@@ -2058,6 +2129,12 @@
+ 
+         self.sd.set_device_state(self.train_device_state_preset)
+         flush()
++        try:
++            import torch as _t20
++            _f20, _tt20 = _t20.cuda.mem_get_info()
++            print_acc(f"[P20-DSP] after set_device_state: VRAM={round((_tt20-_f20)/1e9,2)}GB model_dev={str(next(self.sd.model.parameters()).device)}")
++        except Exception as _e20:
++            print_acc(f"[P20-DSP] probe err {_e20!r}")
+         # self.step_num = 0
+ 
+         # print_acc(f"Compiling Model")
+@@ -2079,6 +2156,18 @@
+             if self.train_config.do_paramiter_swapping:
+                 self.optimizer.optimizer.swap_paramiters()
+             self.timer.start('train_loop')
++            # [P20-INSTR] device-vs-wall timing + allocator stats. Fail-safe: must never break training.
++            _p20_t0 = None; _p20_ev0 = None; _p20_ev1 = None
++            try:
++                import time as _p20_time, torch as _p20_torch
++                _p20_t0 = _p20_time.perf_counter()
++                if _p20_torch.cuda.is_available():
++                    _p20_ev0 = _p20_torch.cuda.Event(enable_timing=True)
++                    _p20_ev1 = _p20_torch.cuda.Event(enable_timing=True)
++                    _p20_ev0.record()
++            except Exception:
++                pass
++
+             if flush_next:
+                 flush()
+                 flush_next = False
+@@ -2097,6 +2186,23 @@
+                 # todo improve this logic to send one of each through if we can buckets and batch size might be an issue
+                 is_reg_step = False
+                 is_save_step = self.save_config.save_every and self.step_num % self.save_config.save_every == 0
++                # [P20-INSTR] manual save/stop triggers (ai-toolkit has no save-on-interrupt).
++                #   SAVE_NOW -> checkpoint at the current step and keep training
++                #   STOP_NOW -> checkpoint at the current step, then exit the loop cleanly (0 steps lost)
++                try:
++                    _p20_flagdir = os.path.join(os.environ.get("FOUNDRY_ROOT") or r"F:\foundry", "var", "state")
++                    _p20_save = os.path.join(_p20_flagdir, 'SAVE_NOW')
++                    _p20_stop = os.path.join(_p20_flagdir, 'STOP_NOW')
++                    if os.path.exists(_p20_save):
++                        is_save_step = True
++                        os.remove(_p20_save)
++                    if os.path.exists(_p20_stop):
++                        is_save_step = True
++                        self._p20_stop_after_save = True
++                        os.remove(_p20_stop)
++                except Exception:
++                    pass
++
+                 is_sample_step = self.sample_config.sample_every and self.step_num % self.sample_config.sample_every == 0
+                 if self.train_config.disable_sampling:
+                     is_sample_step = False
+@@ -2201,6 +2307,28 @@
+                 print("\n==== Profile Results ====")
+                 print(self.torch_profiler.key_averages().table(sort_by="cpu_time_total", row_limit=1000))
+             self.timer.stop('train_loop')
++            # [P20-INSTR] close the step measurement and append a row.
++            # NB: the CUDA sync below is itself a (small) perturbation - intended for benchmark runs.
++            try:
++                _p20_dev_ms = -1.0
++                if _p20_ev0 is not None:
++                    _p20_ev1.record(); _p20_torch.cuda.synchronize()
++                    _p20_dev_ms = _p20_ev0.elapsed_time(_p20_ev1)
++                _p20_wall_ms = (_p20_time.perf_counter() - _p20_t0) * 1000.0
++                _p20_ms = _p20_torch.cuda.memory_stats()
++                _p20_path = os.path.join(os.environ.get("FOUNDRY_ROOT") or r"F:\foundry", "var", "state", "telemetry", "step_instr.csv")
++                if not os.path.exists(_p20_path):
++                    with open(_p20_path, 'w') as _pf:
++                        _pf.write('step,wall_ms,device_ms,alloc_retries,reserved_mb,allocated_mb\n')
++                with open(_p20_path, 'a') as _pf:
++                    _pf.write('%d,%.1f,%.1f,%d,%.1f,%.1f\n' % (
++                        self.step_num, _p20_wall_ms, _p20_dev_ms,
++                        _p20_ms.get('num_alloc_retries', -1),
++                        _p20_ms.get('reserved_bytes.all.current', 0) / 1048576.0,
++                        _p20_ms.get('allocated_bytes.all.current', 0) / 1048576.0))
++            except Exception:
++                pass
++
+             if not did_first_flush:
+                 flush()
+                 did_first_flush = True
+@@ -2256,6 +2384,11 @@
+                         optimizer.zero_grad()
+                         flush()
+                         flush_next = True
++                        # [P20-INSTR] honor STOP_NOW: we just saved, so exit with zero lost steps.
++                        if getattr(self, '_p20_stop_after_save', False):
++                            print_acc('\n[P20] STOP_NOW honored - saved at step %d, exiting cleanly.' % self.step_num)
++                            break
++
+                         if self.progress_bar is not None:
+                             self.progress_bar.unpause()
+                             
+--- a/toolkit/data_loader.py
++++ b/toolkit/data_loader.py
+@@ -566,21 +566,27 @@
+             else:
+                 print_acc(f"  -  Found {len(self.file_list)} images after adding flips")
+ 
++        import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7a AiToolkitDataset.__init__ done, calling setup_epoch")
+         self.setup_epoch()
++        import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7f AiToolkitDataset.__init__ fully done (setup_epoch returned)")
+ 
+     def setup_epoch(self):
++        import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7b setup_epoch entered")
+         if self.epoch_num == 0:
+             # initial setup
+             # do not call for now
+             if self.dataset_config.buckets:
+                 # setup buckets
+                 self.setup_buckets()
++                import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7c setup_buckets done")
+             if self.is_caching_latents:
+                 self.cache_latents_all_latents()
++                import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7d cache_latents_all_latents() done")
+             if self.is_caching_clip_vision_to_disk:
+                 self.cache_clip_vision_to_disk()
+             if self.is_caching_text_embeddings:
+                 self.cache_text_embeddings()
++                import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7e cache_text_embeddings() done")
+             if self.is_generating_controls:
+                 # always do this last
+                 self.setup_controls()
+--- a/toolkit/dataloader_mixins.py
++++ b/toolkit/dataloader_mixins.py
+@@ -1811,6 +1811,24 @@
+         self.latent_cache = {}
+ 
+     def cache_latents_all_latents(self: 'AiToolkitDataset'):
++        import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7d cache_latents_all_latents entered")
++        # [P20 FIX-03 LATENTS-FAST]: if ALL latents are already on disk and we're not also caching to memory,
++        # skip the model-shuffle (save_device_state + set_device_state 'cache_latents' + loop +
++        # restore_device_state) entirely. That shuffle moves Mistral CPU↔GPU twice on a quanto
++        # 24-GB card (~3+3 min). Only the per-file metadata matters for
++        # already-cached latents; set it in a fast loop and return.
++        if self.is_caching_latents_to_disk and not self.is_caching_latents_to_memory:
++            _all_paths = [fi.get_latent_path(recalculate=True) for fi in self.file_list]
++            _all_cached = all(os.path.exists(p) for p in _all_paths)
++            if _all_cached:
++                _p20_pa(f"[P20 FIX-03 LATENTS-FAST] all {len(self.file_list)} latents already cached on disk - skipping model shuffle + loop + restore")
++                for fi in self.file_list:
++                    fi.is_caching_to_disk = True
++                    fi.is_caching_to_memory = False
++                    fi.latent_load_device = self.sd.device
++                    fi.is_latent_cached = True
++                _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7f-FAST cache_latents fast-path complete")
++                return
+         with accelerator.main_process_first():
+             print_acc(f"Caching latents for {self.dataset_path}")
+             # cache all latents to disk
+@@ -1823,6 +1841,7 @@
+                 print_acc(" - Keeping latents in memory")
+             # move sd items to cpu except for vae
+             self.sd.set_device_state_preset('cache_latents')
++            import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7e set_device_state_preset('cache_latents') done, about to loop")
+ 
+             # use tqdm to show progress
+             i = 0
+@@ -1970,14 +1989,16 @@
+         self.is_caching_text_embeddings = self.dataset_config.cache_text_embeddings
+ 
+     def cache_text_embeddings(self: 'AiToolkitDataset'):
++        import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7g cache_text_embeddings entered")
+         with accelerator.main_process_first():
+             print_acc(f"Caching text_embeddings for {self.dataset_path}")
+             print_acc(" - Saving text embeddings to disk")
+-            
++
+             did_move = False
+ 
+             # use tqdm to show progress
+             i = 0
++            import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7h about to loop over {len(self.file_list)} files")
+             for file_item in tqdm(self.file_list, desc='Caching text embeddings to disk'):
+                 file_item.latent_load_device = self.sd.device
+ 
+@@ -1986,8 +2007,37 @@
+                 if not os.path.exists(text_embedding_path):
+                     # load if not loaded
+                     if not did_move:
++                        import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7i cache MISS on first file - calling set_device_state_preset('cache_text_encoder')")
++                        # [P20 FIX-10 PARK-BASE-FOR-DATASET-TE]
++                        # Park the base on CPU before the text encoder comes on, exactly as
++                        # SDTrainer.hook_before_train_loop already does for the OTHER text-embedding
++                        # site (FIX-02 UNET-CPU-GUARD). This branch runs only on an embeds-cache miss (a
++                        # trigger whose captions are all new; FIX-07's global cache covers every other run),
++                        # where the 19-20 GB base plus the 12 GB uint4 Mistral abort natively on a 24 GB card.
++                        # This restores the recipe's stated invariant -- one model on the card at a
++                        # time -- WITHOUT reverting FIX-09: the insertion is inside the cache-MISS
++                        # branch, so a run whose embeds are all cached never executes it and keeps
++                        # FIX-09's 60-90 s saving. Same device guard as FIX-02, because a quanto
++                        # uint4 .to('cpu') on an already-CPU model is NOT free (~1m 30s).
++                        try:
++                            _p20_cur = next(self.sd.unet.parameters()).device.type
++                        except StopIteration:
++                            _p20_cur = None
++                        except Exception:
++                            _p20_cur = None
++                        if _p20_cur is not None and _p20_cur != 'cpu':
++                            self.sd.unet.to('cpu')
++                            try:
++                                import torch as _p20_torch
++                                _p20_torch.cuda.empty_cache()
++                            except Exception:
++                                pass
++                            _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7i-PARK base -> cpu before TE (was {_p20_cur})")
++                        else:
++                            _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7i-PARK skipped (base already on {_p20_cur})")
+                         self.sd.set_device_state_preset('cache_text_encoder')
+                         did_move = True
++                        import datetime as _p20_dt; from toolkit.print import print_acc as _p20_pa; _p20_pa(f"[P20-TIMING] {_p20_dt.datetime.now().strftime('%H:%M:%S.%f')[:-3]} WP7j set_device_state_preset('cache_text_encoder') returned")
+                         
+                     if file_item.encode_control_in_text_embeddings:
+                         if file_item.control_path is None:

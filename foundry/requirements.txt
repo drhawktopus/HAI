@@ -1,0 +1,11 @@
+# The factory's Python packages:  pip install -r requirements.txt  (with the Python the factory runs under)
+# The order taker starts with these two:
+requests
+pyyaml
+# The render worker and the renders it makes:
+websocket-client
+pillow
+numpy
+playwright
+# Dataset orders (building and captioning image sets):
+pyarrow

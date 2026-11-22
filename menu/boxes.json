@@ -1,0 +1,154 @@
+{
+ "_notes": {
+  "bench_ctx": "the families' long-standing bench standard per box: an untested model runs at it",
+  "box_order": "the standings' column order",
+  "champion": "priced at every knob, never auto-stopped: its price list is the point (34-Hard-Bench-Order-Spec, 34-CHARTER section 10)",
+  "crown": "the agentic lead's crown: a decision about the box, not a measured row (menu_policy writes it into the policy's roles)",
+  "fill_order": "the order the filler tops boxes up in; boxes not listed follow by name",
+  "offload_ok": "models allowed to run partly in system RAM on this box (the owner's ruling): their windows declare --offload-ok",
+  "prelim_champion": "models priced at every knob before their crown is final",
+  "shape": "the box's hard-bench shape (S6 = an 8 GB card, S7 = the lead)",
+  "tablet_classes": "the Fellowship tablets' hardware classes (A, B, C), for the chat family's reduction",
+  "tested_ctx": "Every value: the spill-aware fit probe on ollama 0.40.5 with LLAMA_ARG_FIT_TARGET=512 (campaigns\\fit-20261015; BigHonker's desktop-aware re-fit fit-20261019-desktop, qwen3-vl:8b fit-20261023). qwen3.6:35b-a3b is absent: it spills into shared memory at every context down to 1,024 on Mothership, so it has no tested context. The small models (nemotron-3-nano:4b, minicpm-v:4.6-q4km, minicpm5:1b-q4km) fit at their full windows on the 8 GB boxes.",
+  "tier": "the placement tier each box homes (menu_policy tiers)",
+  "tiers": "homes: the design's tiers and their home boxes; overflow: the other tiers' boxes a tier spills to, in order",
+  "unceiled": "a box whose families are priced with no time ceiling"
+ },
+ "box_order": [
+  "mothership",
+  "bighonker",
+  "softserve",
+  "rigby",
+  "fellowship"
+ ],
+ "boxes": {
+  "bighonker": {
+   "bench_ctx": 6144,
+   "offload_ok": [
+    "qwen3.6:35b-a3b-ud-q3kxl-mtp"
+   ],
+   "shape": "S6",
+   "tested_ctx": {
+    "minicpm-v:4.6-q4km": 262144,
+    "minicpm5:1b-q4km": 131072,
+    "nemotron-3-nano:4b": 262144,
+    "qwen3-vl:8b": 15360,
+    "qwen3.5:9b": 19968,
+    "qwen3.6:35b-a3b-ud-q3kxl-mtp": 65536,
+    "qwen3:8b": 23552
+   },
+   "tier": "8gb"
+  },
+  "fellowship": {
+   "tier": "fellowship"
+  },
+  "mothership": {
+   "bench_ctx": 8192,
+   "champion": "qwen3.8:27b",
+   "crown": {
+    "decided": "2026-10-18",
+    "model": "qwen3.8-flash-next-strata-q2_0",
+    "think": "xhigh",
+    "why": "Phase 2 reopened by the RAM swap and CLOSED 2026-10-18 (register): A1 lead role 12/15 vs the 3.8's 9/15 on one harness, a superset of its solves, ~0.58 vs ~0.94 MJ whole-box per solve; blind quality parity (Claude + external Codex review). Crown SHARED by job family: this is the agentic lead; the 3.8 (crowned 2026-10-09: 8/9 + 3/7 hard) keeps the quick families. The owner: 'trust your judgment'"
+   },
+   "offload_ok": [
+    "qwen3.8-flash-next:125b-a6b-q4_K_M"
+   ],
+   "prelim_champion": [
+    "qwen3.8-flash-next-strata-q2_0"
+   ],
+   "shape": "S7",
+   "tested_ctx": {
+    "gemma3:27b": 123904,
+    "medgemma:27b": 130048,
+    "nemotron-3-nano:30b-iq4xs": 1048576,
+    "ornith-1.5:35b-a3b-q4km": 223232,
+    "qwen3-coder:30b": 107520,
+    "qwen3-vl:8b": 221184,
+    "qwen3.6:27b": 151552,
+    "qwen3.8:27b": 125952,
+    "qwen3.8:27b-mtp-q4_K_M": 125952,
+    "qwen3:14b": 40960
+   },
+   "tier": "lead",
+   "unceiled": true
+  },
+  "rigby": {
+   "tier": "fellowship"
+  },
+  "softserve": {
+   "bench_ctx": 6144,
+   "shape": "S6",
+   "tested_ctx": {
+    "minicpm-v:4.6-q4km": 262144,
+    "minicpm5:1b-q4km": 131072,
+    "nemotron-3-nano:4b": 262144,
+    "qwen3-vl:8b": 17408,
+    "qwen3.5:9b": 47104,
+    "qwen3:8b": 23552
+   },
+   "tier": "8gb"
+  }
+ },
+ "fill_order": [
+  "bighonker",
+  "softserve",
+  "mothership"
+ ],
+ "tablet_classes": {
+  "aragorn": "A",
+  "boromir": "B",
+  "faramir": "B",
+  "frodo": "B",
+  "gandalf": "A",
+  "gimli": "B",
+  "legolas": "B",
+  "merry": "C",
+  "pippin": "C",
+  "sam": "B"
+ },
+ "tiers": {
+  "homes": {
+   "8gb": [
+    "bighonker",
+    "softserve"
+   ],
+   "fellowship": [
+    "rigby",
+    "fellowship"
+   ],
+   "lead": [
+    "mothership"
+   ],
+   "rigby": [
+    "rigby"
+   ],
+   "tablets": [
+    "fellowship"
+   ]
+  },
+  "overflow": {
+   "8gb": [
+    "lead",
+    "fellowship"
+   ],
+   "fellowship": [
+    "8gb",
+    "lead"
+   ],
+   "lead": [
+    "8gb"
+   ],
+   "rigby": [
+    "8gb",
+    "lead",
+    "tablets"
+   ],
+   "tablets": [
+    "rigby",
+    "8gb",
+    "lead"
+   ]
+  }
+ }
+}

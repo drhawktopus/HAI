@@ -1,0 +1,14 @@
+[Unit]
+Description=Mount the tablet head's network shares before Docker (Tolkien's inbox, outbox and docs live on them)
+Wants=network-online.target
+After=network-online.target
+Before=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/rigby-mount-shares.sh @SHARES@
+TimeoutStartSec=infinity
+
+[Install]
+WantedBy=multi-user.target

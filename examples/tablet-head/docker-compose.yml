@@ -1,0 +1,76 @@
+# Tolkien, the tablets' order taker, with its watchdog and its telemetry logger. It runs on the tablet head: the
+# machine the tablets' USB segment is bridged on (fellowship/README.md). Host networking, because it needs both your
+# LAN (the head, the tablets over WiFi) and the USB segment.
+#
+#   1. Set up the tablets and the segment first: fellowship/README.md (flash, provision, roster, bridge).
+#   2. Copy tolkien.env.example to tolkien.env and fill it in. Make ./jobs the same folder the head mounts at /tabjobs
+#      (a network share both machines see): the head puts orders in its inbox, Tolkien ships results to its outbox
+#      (examples/full-stack/sidecars.env.example, "A tablet head", names the head's side).
+#   3. Put the tablets' ssh private key at secrets/tabcluster_key (mode 0600, owned by root) and the fellows' shared
+#      token at secrets/fellow_token. Point library/ at your documents (read only).
+#   4. Install the USB reach probe for the watchdog (fellowship/install_usb_reach_probe.sh) and give the watchdog's
+#      key the forced command it prints.
+#   5. From this folder:  docker compose up -d --build
+#
+# Optional, for running models on this machine's own card: mount a llama.cpp build at /llama/bin and your models at
+# /models (TOLKIEN_LLAMA_BIN and TOLKIEN_MODELS name them), and pass the card's device nodes. See the commented lines.
+name: hai-tablet-head
+
+x-tolkien: &tolkien
+  image: hai-tablet-foundry:latest
+  restart: unless-stopped
+  network_mode: host
+  env_file:
+    - tolkien.env
+  working_dir: /app
+
+services:
+  tablet-foundry:
+    <<: *tolkien
+    build:
+      context: ../../tablet-foundry
+      # the placement brain and the shared foundry modules come from their own source folders, never a copy
+      additional_contexts:
+        orch: ../../head
+        foundry: ../../foundry
+    container_name: tablet-foundry
+    volumes:
+      - ./tablet-foundry:/tabfoundry
+      - ./jobs:/jobs                             # the inbox and outbox (TABLET_INBOX / TABLET_OUTBOX)
+      - ./library:/docs:ro
+      - ./secrets/tabcluster_key:/run/secrets/tabcluster_key:ro
+      - ./secrets/fellow_token:/run/secrets/fellow_token:ro
+      # - /path/to/llama.cpp/build/bin:/llama/bin:ro
+      # - /path/to/models:/models:ro
+    # devices:
+    #   - /dev/nvidia0:/dev/nvidia0
+    #   - /dev/nvidiactl:/dev/nvidiactl
+    #   - /dev/nvidia-uvm:/dev/nvidia-uvm
+    command: ["python", "tablet_runner.py"]
+
+  # Supervises tablet-foundry from outside it: a guard sharing a process with the thing it guards cannot report that
+  # process hanging. Reports only; it has no act tier and no Docker socket.
+  tablet-watchdog:
+    <<: *tolkien
+    container_name: tablet-watchdog
+    environment:
+      - TABLET_WATCH_RIGBY=127.0.0.1             # the USB reach probe runs on this machine
+    volumes:
+      - ./tablet-foundry:/tabfoundry
+      - ./library:/docs:ro
+      - ./secrets/tabcluster_key:/run/secrets/tabcluster_key:ro
+    command: ["python", "tablet_watch.py"]
+    depends_on:
+      - tablet-foundry
+
+  # Continuous history for this machine, its card and the tablets, in its own container so it keeps recording while
+  # the order taker is down or being redeployed.
+  tolkien-telemetry:
+    <<: *tolkien
+    container_name: tolkien-telemetry
+    pid: host
+    volumes:
+      - ./tablet-foundry:/tabfoundry
+    command: ["python", "-u", "tolkien_telemetry.py"]
+    depends_on:
+      - tablet-foundry

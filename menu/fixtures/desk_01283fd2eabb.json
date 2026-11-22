@@ -1,0 +1,93 @@
+{
+ "id": "01283fd2eabb",
+ "kind": "factory_order",
+ "order_name": "hardbench-fleet-grid-bi-9b-f1-t09-off-s7-9b.20260929-182040_bighonker",
+ "spec": {
+  "name": "hardbench-fleet-grid-bi-9b-f1-t09-off-s7-9b.20260929-182040_bighonker",
+  "mode": "compute",
+  "load": "gpu",
+  "initiator": "ClaudeSupervisor",
+  "payload": "{FOUNDRY_ROOT}\\bin\\infer_ollama.py",
+  "args": [
+   "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260929\\fleet-grid-bi-9b-f1-t09-off-s7\\items.20260929-182040.json",
+   "{ORDER_OUT}\\out.json",
+   "--model",
+   "qwen3.5:9b",
+   "--rounds",
+   "3",
+   "--num-ctx",
+   "7168",
+   "--temperature",
+   "0.9",
+   "--seed-base",
+   "7",
+   "--grade",
+   "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\payloads\\map_swarm_code_hard.py"
+  ],
+  "progress_glob": "{ORDER_OUT}\\out.progress\\*.done",
+  "progress_total": 33,
+  "deliver_to": "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260929\\fleet-grid-bi-9b-f1-t09-off-s7",
+  "notify": "failures",
+  "caption_model": "aha2025/llama-joycaption-beta-one-hf-llava:Q4_K_M",
+  "caption_workers": 4,
+  "python_exe": "F:\\comfy-bench\\venv\\Scripts\\python.exe",
+  "requires": [
+   "order.compute",
+   "model.qwen3.5:9b"
+  ],
+  "placed_by": "scheduler.compose_orders",
+  "placed_on": "bighonker",
+  "pinned_to": [
+   "bighonker"
+  ]
+ },
+ "requires": [
+  "order.compute",
+  "model.qwen3.5:9b"
+ ],
+ "rush": false,
+ "after_ids": [],
+ "step": "",
+ "host": "bighonker",
+ "status": "done",
+ "route": {
+  "template": {
+   "name": "hardbench-fleet-grid-bi-9b-f1-t09-off-s7-9b.20260929-182040",
+   "mode": "compute",
+   "load": "gpu",
+   "initiator": "ClaudeSupervisor",
+   "payload": "{FOUNDRY_ROOT}\\bin\\infer_ollama.py",
+   "args": [
+    "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260929\\fleet-grid-bi-9b-f1-t09-off-s7\\items.20260929-182040.json",
+    "{ORDER_OUT}\\out.json",
+    "--model",
+    "qwen3.5:9b",
+    "--rounds",
+    "3",
+    "--num-ctx",
+    "7168",
+    "--temperature",
+    "0.9",
+    "--seed-base",
+    "7",
+    "--grade",
+    "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\payloads\\map_swarm_code_hard.py"
+   ],
+   "progress_glob": "{ORDER_OUT}\\out.progress\\*.done",
+   "progress_total": 33,
+   "deliver_to": "\\\\10.0.0.204\\SSDShared\\tabfoundry-jobs\\campaigns\\hard-bench-20260929\\fleet-grid-bi-9b-f1-t09-off-s7",
+   "notify": "failures"
+  },
+  "kind": "",
+  "only": [
+   "bighonker"
+  ],
+  "exclude": [],
+  "items": null
+ },
+ "initiator": "fleet-desk",
+ "created": "2026-09-29T23:20:38.584504+00:00",
+ "claimed_by": "bighonker",
+ "claimed_at": "2026-09-30T00:38:23.174838+00:00",
+ "updated": "2026-10-01T01:55:05.358483+00:00"
+}

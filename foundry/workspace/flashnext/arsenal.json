@@ -1,0 +1,912 @@
+{
+ "about": "The Flash-Next arsenal as data (the owner, 2026-10-01: stop collapsing the toolset). A lever counts as TRIED only when its FULL form has run. Partial forms are recorded as partial. plan_lint.py refuses a plan that names no levers, refuses unknown lever ids, and every placement prints the levers whose full form has never run. Update a lever's status in the SAME pass its result lands (and the doc's ledger row). Status: open | testing | partial | done | closed | needs-owner.",
+ "levers": {
+  "mtp": {
+   "full": "MTP draft head, draft 2",
+   "status": "done",
+   "tested": [
+    "draft 2/3, Q4/Q8 head, warm + varied",
+    "BigHonker A3B 10-17 (B10): draft-mtp depth ~3 (57% acc.) and depth 2 (72% acc.) both LOST with experts in RAM (22.2-22.7 vs 26)"
+   ],
+   "result": "+45% warm, +10% varied; draft 2, Q4 head",
+   "resources": [
+    "gpu_compute",
+    "cpu"
+   ]
+  },
+  "vulkan": {
+   "full": "Vulkan backend",
+   "status": "done",
+   "tested": [
+    "vs ROCm bundle at equal N"
+   ],
+   "result": "+9-20% gen; ROCm keeps prefill (174)",
+   "resources": [
+    "gpu_compute",
+    "gpu_sched"
+   ]
+  },
+  "repack_iq4": {
+   "full": "CPU repack of IQ4_NL experts",
+   "status": "done",
+   "tested": [
+    "warm",
+    "varied"
+   ],
+   "result": "~+10%",
+   "resources": [
+    "cpu"
+   ]
+  },
+  "repack_q2k": {
+   "full": "CPU repack of Q2_K experts on AVX2 (our patch)",
+   "status": "done",
+   "tested": [
+    "warm",
+    "varied mmap"
+   ],
+   "result": "warm level; varied LOSES (anonymous memory -> pagefile drive)",
+   "resources": [
+    "cpu",
+    "ram"
+   ]
+  },
+  "np1_ub512": {
+   "full": "-np 1, -ub 512",
+   "status": "done",
+   "tested": [
+    "warm"
+   ],
+   "result": "+4% gen; prefill +6-27%",
+   "resources": [
+    "vram",
+    "gpu_compute"
+   ]
+  },
+  "cache_addon": {
+   "full": "expert cache slots added to layer placement (N<=34)",
+   "status": "done",
+   "tested": [
+    "32/48 slots, repack on/off, warm + varied"
+   ],
+   "result": "+31% warmed (no-repack build); with repack ~level warm, loses varied",
+   "resources": [
+    "vram",
+    "cpu",
+    "pcie"
+   ]
+  },
+  "hotness_placement": {
+   "full": "ALL expert layers CPU-side file-backed (mmap, no repack), VRAM spent as cache slots across every layer (~128-160/layer)",
+   "status": "partial",
+   "tested": [
+    "N=48, 160 slots, mmap no-repack, warm (hot48 14:40)"
+   ],
+   "result": "hit 82% but 7.5-7.8 tok/s: misses page from F: at queue 2.6 (220 MB/s), C: idle; middle ground (midhot) next; fault_ahead is the coupled fix",
+   "resources": [
+    "vram",
+    "cpu",
+    "drive_model",
+    "pcie"
+   ]
+  },
+  "cache_tuning": {
+   "full": "--moe-expert-cache-inserts 2+, q4_0 KV to free VRAM for slots",
+   "status": "open",
+   "tested": [
+    "BigHonker A3B 10-17 (B10): q4_0 KV alone: +2% (one more expert layer), skipped for its quality cost"
+   ],
+   "result": "",
+   "resources": [
+    "vram",
+    "pcie"
+   ]
+  },
+  "cache_warm_start": {
+   "full": "saved hot-expert profile pre-fills slots at start (needs a patch)",
+   "status": "open",
+   "tested": [],
+   "result": "",
+   "resources": [
+    "vram",
+    "pcie",
+    "engine"
+   ]
+  },
+  "clock_floor": {
+   "full": "GPU minimum clock in AMD Software (card generates at 600-1350 MHz)",
+   "status": "closed on Mothership (by reasoning); MEASURED effective on BigHonker NVIDIA",
+   "tested": [
+    "BigHonker 3070 (NVIDIA, Windows), qwen3.6 35B-A3B experts in RAM, 2026-10-17: gpu_clock 1965 (nvidia-smi -lgc) vs unlocked, same launch"
+   ],
+   "result": "the owner, 2026-10-01 15:00: the card ramps itself like it does for every game or model; 600-985 MHz is DPM correctly clocking down because the GPU is idle-waiting (load 9-35% in every arm). The clock is a STARVATION GAUGE, not a lever: feed the card and it ramps. A floor would only burn power while it waits.",
+   "resources": [
+    "gpu_compute"
+   ],
+   "result_bighonker": "2026-10-17 #34 B10: MEASURED +22% writing - 25.3-26.6 tok/s locked vs 20.3-21.7 unlocked (unlocked -> locked -> unlocked, three locked orders agree, no overlap); unlocked card measured at 450-525 MHz P3 during the answer (idle throttle). CPU and GPU take strict turns (flashnext-profile2b), so GPU segment time is on the critical path. The 10-01 closed verdict above was AMD/Mothership by reasoning (tested: [] then); whether it holds there is untested - the owner to decide on a re-test."
+  },
+  "vram_margin": {
+   "full": "keep ~1 GB VRAM free, zero shared spill",
+   "status": "open",
+   "tested": [
+    "BigHonker A3B 10-17 (B10): llama.cpp fitter margin 512 vs 1024 MiB: +5% writing (one more expert layer), no spill"
+   ],
+   "result": "",
+   "resources": [
+    "vram"
+   ]
+  },
+  "lzm_off": {
+   "full": "-lzm off (lazy mode reported to halve prefill)",
+   "status": "open",
+   "tested": [],
+   "result": "",
+   "resources": [
+    "ram",
+    "drive_model"
+   ]
+  },
+  "big_ubatch": {
+   "full": "-b/-ub 2048-4096 for prefill (+ GGML_OP_OFFLOAD_MIN_BATCH)",
+   "status": "open",
+   "tested": [
+    "256, 512 only",
+    "BigHonker A3B 10-17 (B10): -b/-ub 2048 at fit 512: reading 1,590 vs ~650 tok/s (4K prompt), writing -4 to -6%"
+   ],
+   "result": "",
+   "resources": [
+    "gpu_compute",
+    "pcie",
+    "vram"
+   ]
+  },
+  "pagefile_drive": {
+   "full": "pagefile on a fast non-OS drive",
+   "status": "closed",
+   "tested": [],
+   "result": "C: (T-FORCE) is the pagefile drive ON PURPOSE - it is the fastest drive (the owner, 2026-10-01 20:40); the varied-prompt wall is paging volume, not the drive choice",
+   "resources": [
+    "drive_pagefile",
+    "ram"
+   ]
+  },
+  "fault_ahead": {
+   "full": "PrefetchVirtualMemory for routed experts (patch, backlog)",
+   "status": "partial",
+   "tested": [
+    "batched PrefetchVirtualMemory on thread 0 inside the grouping step (moe_fault_ahead.py)"
+   ],
+   "result": "as built it SERIALISES the pass: warm 12 vs 17-20, F: queue fell 2.6 -> 0.4; redesign: prefetch from a background thread that runs ahead, nothing waits on it",
+   "resources": [
+    "drive_model",
+    "ram"
+   ]
+  },
+  "mmap": {
+   "full": "-lm mmap (file-backed experts)",
+   "status": "done",
+   "tested": [
+    "varied 5 + 10 prompts"
+   ],
+   "result": "+30-40% varied vs none on q2k",
+   "resources": [
+    "ram",
+    "drive_model"
+   ]
+  },
+  "fitting_cook": {
+   "full": "q2kd2: Q2_0 down on CPU layers so the set fits RAM",
+   "status": "done",
+   "tested": [
+    "warm",
+    "varied",
+    "cache"
+   ],
+   "result": "varied best (~14.7 median); warm 14 (no repack path)",
+   "resources": [
+    "ram",
+    "cpu"
+   ]
+  },
+  "concurrency": {
+   "full": "parallel requests -np 4 WITH the cache carrying reads",
+   "status": "partial",
+   "tested": [
+    "without cache: flat"
+   ],
+   "result": "reopen after hotness/cache wins",
+   "resources": [
+    "gpu_compute",
+    "cpu"
+   ]
+  },
+  "sparse_attention": {
+   "full": "PR #28213 gather-based QSA decode ported to the mix build",
+   "status": "open",
+   "tested": [],
+   "result": "long-context lever",
+   "resources": [
+    "gpu_compute",
+    "engine"
+   ]
+  },
+  "reasoning_low": {
+   "full": "--reasoning-effort low for served answers",
+   "status": "open",
+   "tested": [],
+   "result": "",
+   "resources": [
+    "engine"
+   ]
+  },
+  "prefix_cache": {
+   "full": "prompt-prefix KV cache (cache_prompt, --slot-save-path)",
+   "status": "open",
+   "tested": [],
+   "result": "",
+   "resources": [
+    "engine",
+    "gpu_compute"
+   ]
+  },
+  "ngram_mod": {
+   "full": "ngram-mod speculation, alone and stacked on MTP (--spec-type draft-mtp,ngram-mod)",
+   "status": "open",
+   "tested": [
+    "27B dense only (2026-10-08 flashnext-q27b-ngram / -ngram-stack): alone 36-53 tok/s, stacked on MTP3 75.5 / 84.6 vs MTP alone ~82-85 - no gain; NOT yet tested on Flash-Next"
+   ],
+   "result": "the build stacks it with MTP (comma list); on the dense 27B it adds rejected guesses and no speed",
+   "resources": [
+    "gpu_compute",
+    "engine"
+   ]
+  },
+  "ram_1to1": {
+   "full": "DDR4 at 1:1 (BIOS)",
+   "status": "done",
+   "tested": [
+    "3800/1900 1:1 D.O.C.P. CL18, SoC manual ~1.12 V (flashnext-ram-after, 2026-10-01 18:40)"
+   ],
+   "result": "warm 28.1 -> 30.1/30.2 (n=2, acceptance level 0.81) = RAM; varied median 13.0 -> 17.7 but fresh-boot confound (paging fell 21%) - uptime re-run pending; 0 WHEA 19 under load. 4000/2000 and 3933/1966 not clean on this chip",
+   "resources": [
+    "ddr4"
+   ]
+  },
+  "rocm_prefill_route": {
+   "full": "ollama ROCm bundle as a long-prompt route",
+   "status": "done",
+   "tested": [
+    "prefill"
+   ],
+   "result": "174 prefill",
+   "resources": [
+    "gpu_compute"
+   ]
+  },
+  "task_ordering": {
+   "full": "menu filler groups cells by task on paging-bound boxes",
+   "status": "open",
+   "tested": [],
+   "result": "",
+   "resources": [
+    "ram",
+    "engine"
+   ]
+  },
+  "threads": {
+   "full": "12/16 threads",
+   "status": "closed",
+   "tested": [
+    "12",
+    "16 mmap"
+   ],
+   "result": "8 best",
+   "resources": [
+    "cpu"
+   ]
+  },
+  "whole_layer_split": {
+   "full": "-ngl K whole layers on CPU",
+   "status": "closed",
+   "tested": [
+    "ngl 17"
+   ],
+   "result": "12.5 vs 28.4",
+   "resources": [
+    "cpu",
+    "pcie"
+   ]
+  },
+  "fusion": {
+   "full": "hyper-connection fusion",
+   "status": "done",
+   "tested": [
+    "already in b11160"
+   ],
+   "result": "+2-4% by its own numbers",
+   "resources": [
+    "gpu_compute"
+   ]
+  },
+  "telemetry": {
+   "full": "full-system TREE telemetry per arm",
+   "status": "done",
+   "tested": [],
+   "result": "instrument, not a lever; every arm",
+   "resources": [
+    "all"
+   ]
+  },
+  "hags": {
+   "full": "Hardware-accelerated GPU scheduling on vs off (Windows; changes WDDM submit latency for ~8,100 small kernels/pass)",
+   "status": "closed",
+   "tested": [],
+   "result": "ON per the owner, 2026-10-01 15:10 (no HwSchMode override in the registry - Windows default). Not a lever.",
+   "resources": [
+    "gpu_sched"
+   ]
+  },
+  "amd_compute_profile": {
+   "full": "AMD Software workload/power profile for compute (keeps DPM from parking the card between bursts)",
+   "status": "closed",
+   "tested": [],
+   "result": "the owner, 2026-10-01 15:00: the card ramps itself like it does for every game or model; 600-985 MHz is DPM correctly clocking down because the GPU is idle-waiting (load 9-35% in every arm). The clock is a STARVATION GAUGE, not a lever: feed the card and it ramps. A floor would only burn power while it waits.",
+   "resources": [
+    "gpu_compute",
+    "gpu_sched"
+   ]
+  },
+  "vk_env_knobs": {
+   "full": "Vulkan backend env knobs: GGML_VK_DISABLE_FUSION (verify fusion is ON), GGML_VK_PREFER_HOST_MEMORY, submit batching",
+   "status": "partial",
+   "tested": [
+    "GGML_VK_MAX_NODES_PER_SUBMIT=1000 on the winner (submit 16:45)"
+   ],
+   "result": "submit cap 1000: 27.93/25.72 vs untimed reference 28.11/26.22 - no gain; the ~10% issue cost is per-node recording, not submit count. Other knobs (fusion verify, host memory) untested",
+   "resources": [
+    "gpu_sched",
+    "gpu_compute"
+   ]
+  },
+  "cpu_affinity": {
+   "full": "pin the 8 compute threads to 8 PHYSICAL cores (--cpu-mask / --cpu-strict 1), no SMT siblings; --prio/--poll alone tested no change on the bundle",
+   "status": "closed",
+   "tested": [
+    "--prio 2 --poll 100 (bundle, no change)",
+    "--cpu-mask 5555 --cpu-strict 1 on the winner (affinity 20:34): 29.49/27.81 vs same-order control 30.09/28.44"
+   ],
+   "result": "no gain - Windows already spreads the 8 threads over physical cores",
+   "resources": [
+    "cpu"
+   ]
+  },
+  "large_pages": {
+   "full": "Windows large pages for expert buffers (SeLockMemoryPrivilege for the console user - the owner granting 2026-10-01 19:40 - PLUS a ggml patch: the engine has NO large-page code (git grep MEM_LARGE_PAGES = 0 hits); --mlock is VirtualLock, not large pages; non-pageable, so it fits the RAM-resident q2kd2, not q2k): fewer TLB misses streaming ~0.6 GB of experts per pass",
+   "status": "needs-owner",
+   "tested": [],
+   "result": "user right is a security policy - the owner's call",
+   "resources": [
+    "cpu",
+    "ddr4",
+    "ram"
+   ]
+  },
+  "pcie_link": {
+   "full": "verify the card's PCIe link is Gen4 x16 under load (cache uploads, 66 hops/token, prefill op-offload ride it)",
+   "status": "open",
+   "tested": [],
+   "result": "",
+   "resources": [
+    "pcie"
+   ]
+  },
+  "model_drive_choice": {
+   "full": "model file on the fastest idle drive (F: PNY Gen4 today; C: is busy with Windows + pagefile)",
+   "status": "done",
+   "tested": [
+    "F: idle 94-99% under every load"
+   ],
+   "result": "F: is right",
+   "resources": [
+    "drive_model"
+   ]
+  },
+  "expert_deferral": {
+   "full": "KTransformers Expert Deferral on layers 0-31: route the top experts immediately, defer the rest to the next layer residual add so CPU routed-expert math overlaps the next layer GPU work; decode only, never the last layer, >=2 immediate (SOSP25: +33% on DeepSeek-V3, <=2 pt eval change). Not lossless.",
+   "status": "closed",
+   "tested": [
+    "Stage A alone (defer 4, layers<32): 19.2/20.2 vs 30.0/28.8 same binary",
+    "A+B overlap: 22.1/23.8 - overlap -6 ms/graph, graph +8 ms (17 vs 9 splits)",
+    "ordering build 058c7d1f3: 22.2/23.1 (separator landed on CPU, no overlap)",
+    "prefix-first 14c35c260: 24.62/26.36; + one-copy concat 25.22/27.83 vs same-order control 29.67/28.48; per-graph wall at parity (21.1-25.3 vs 22.1-25.3 ms)"
+   ],
+   "result": "PARKED AT PARITY 2026-10-01 21:05: overlap pays for its own overhead, acceptance 0.785 vs 0.812 costs the rest; CPU wait is mostly per-step GPU latency. Resume only with a way to buy back acceptance (k=2) or lower GPU per-step latency.",
+   "resources": [
+    "cpu",
+    "gpu_compute",
+    "engine"
+   ]
+  },
+  "async_sched_copies": {
+   "full": "llama.cpp PR #25319 (open): scheduler input copies via events instead of synchronize",
+   "status": "open",
+   "tested": [],
+   "result": "~5% tg on a UMA device per the PR thread; prerequisite for any overlap",
+   "resources": [
+    "cpu",
+    "gpu_compute",
+    "pcie"
+   ]
+  },
+  "shexp_overlap": {
+   "full": "run the GPU shared expert concurrently with the CPU routed experts of the same layer (lossless; reorder in build_layer_ffn + event sync)",
+   "status": "open",
+   "tested": [],
+   "result": "shared expert is one 640-wide expert: GPU time tiny, inferred <=5%",
+   "resources": [
+    "gpu_compute",
+    "cpu"
+   ]
+  },
+  "strata_hipblaslt_table": {
+   "full": "Strata: a hipBLASLt tuning table calibrated for gfx1100 at the engine's hipBLASLt (100500) - prefill's dense GEMMs on tuned hipBLASLt instead of plain hipBLAS",
+   "status": "done",
+   "tested": [
+    "2026-10-18 build kit: the engine's exact ROCm 10.2.0a20260930 in E:\\StrataBuild\\.rocm-win; tuner built; run 1 failed (rocBLAS: no gfx1100 kernels in the kit's folders), run 2 runs on engine\\rocm\\bin (order flashnext-tune-hipblaslt-gfx1100.20261018-0815)"
+   ],
+   "result": "adopted via Strata v0.1.45, which SHIPS tools\\hip\\gfx1100-hipblaslt-100500.txt (= our own calibration on 25 of 26 shapes, +6 more); per shape x1.12-12.2 vs plain hipBLAS (median x5.35, our tuner log); the v0.1.45 best config (with the 7900 XTX recipe + all KV on card): 4K read 1,359 vs ~830, 192K read 1,454 vs 808 (order flashnext-strata-045-best.20261018-0928)",
+   "resources": [
+    "gpu_compute"
+   ],
+   "note": "Strata docs: a calibrated table took a fresh 32K read 638 -> 1,177 tok/s on another card, decode unchanged. the owner 10-18: first lever to try - 'doesn't cost writing speed'. Adopt after a read A/B + STRATA_HIPBLASLT_VERBOSE=1 fallbacks=0."
+  },
+  "strata_prefill_size": {
+   "full": "Strata --prefill chunk size (auto now) up to 16384 for long reads",
+   "status": "open",
+   "tested": [],
+   "result": "",
+   "resources": [
+    "gpu_compute",
+    "vram",
+    "pcie"
+   ],
+   "note": "Strata docs read 65K at 748-753 tok/s with --prefill 16384 --kv-resident 65536; the llama.cpp counterpart (big_ubatch) gave BigHonker's A3B 2.4x reads at -4-6 % write (10-17)."
+  },
+  "strata_context_262k": {
+   "full": "Strata --context 262144 (the GGUF's trained context_length) instead of --low-ram auto's 131072",
+   "status": "done",
+   "tested": [
+    "2026-10-18 flashnext-strata-plateau-ctx262k: one variable vs the 131K plateau + a 191,857-token deep read with a mid-depth needle"
+   ],
+   "result": "adopted: write 66.9 vs 68.8 (within spread), 4K read ~820 vs ~840, +1.8 GB RAM; deep read 808 tok/s, needle found; write at 192K depth 28.6; v0.1.45 + --kv-resident 262144 (the WHOLE KV on the card): write at 192K depth 64.4 over 346 tokens, 0 % PCIe, no RAM/file expert reads",
+   "resources": [
+    "ram",
+    "vram"
+   ]
+  },
+  "strata_parallel": {
+   "full": "Strata \"parallel\": N batch slots (engine --batch N): up to N conversations decoded together, expert reads shared across them",
+   "status": "open",
+   "tested": [],
+   "result": "",
+   "resources": [
+    "gpu_compute",
+    "vram",
+    "pcie"
+   ],
+   "note": "2026-10-18 (the owner: 'Can we cut down on the fixed overhead in any way that's not destructive?'). Short prompts pay a ~0.9 s fixed read cost per request (t = 0.91 s + n / ~1,016 tok/s, from the 4K plateau read and the W1 rows) - Strata streams the experts per prompt chunk (docs\\DETAILS.md: 'a 2,048-token chunk is where the prompt path is efficient'; Q2_0 is fixed at --prefill 2048). Agentic turns already avoid most of it through the prompt cache (~96 % reuse per turn, DETAILS.md). Parallel slots raise throughput, not single-answer speed: Strata's BATCHING.md says 'about 10-25% speed per request on this card'. Test: A/B parallel 1 vs 2 - aggregate tok/s AND per-request tok/s - for HAI's multi-user / helper load. Not for menu pricing (single-request is the menu's standard)."
+  },
+  "cpu_fit_quant": {
+   "full": "the published quant whose CPU-side tensors have AVX2 kernels (K-quants; Q4_0 = llama.cpp's online repack) at the box's speed/quality knee - read the quantizers' model cards + the file's tensor types (header only)",
+   "status": "closed for BigHonker's A3B 2026-10-18 (the IQ file stays); open elsewhere (rigby; the 27B per its own file)",
+   "tested": [
+    "BigHonker A3B, same tuned launch (gpu_clock 1965, -t 4 -tb 6, fit 512, b/ub 2048, q8_0 KV, FA, -np 1, ctx 65,536), 4,073-token prompt, writing / reading tok/s | bits/weight | CPU-side MiB: IQ UD-Q3_K_XL 25.6-26.3 / ~1,590 | 3.88 | 11,051 pinned; bartowski Q3_K_M 26.1-26.4 / 1,311-1,504 | 3.85 | 10,507 pinned; bartowski Q4_0 21.2-24.0 / ~1,337 | 4.69 | 14,000 pinned (5 threads 11.5-14.7); unsloth UD-Q4_K_M 22.6-25.0 / 922-957 | 5.11 | 16,106 in ordinary memory",
+    "BigHonker qwen3.8:27b (dense), MTP2: lmstudio Q4_K_M 1.88-2.01 (plain 1.73-1.78) vs unsloth Q4_0 1.43-1.52 (6 threads 1.40-1.48)"
+   ],
+   "result": "WRITING FOLLOWS BYTES PER TOKEN, NOT THE QUANT'S KERNELS (2026-10-18; the owner: tuning is quant-specific, don't assume 1-1). The same-size K-quant (Q3_K_M, 3.85 bpw) runs the same as the IQ file (3.88 bpw): 26.1-26.4 vs 25.6-26.3 tok/s, so decode on BigHonker is MEMORY-bound. WITHDRAWN: the earlier reading 'the K kernels are faster per byte' (inferred from UD-Q4_K_M losing less than its size predicted; the cause of that smaller loss was not isolated) and the prediction of ~30 tok/s for Q3_K_M. Larger files lose roughly in proportion (Q4_0 4.69 bpw, UD-Q4_K_M 5.11 bpw). READING follows the CPU-side bytes while the weights sit in pinned CUDA_Host memory, and fell furthest when they did not (UD-Q4_K_M, ordinary memory, 940 vs ~1,590). The IQ file stays the A3B's BigHonker file. The dense 27B: the K-quant Q4_K_M beats Q4_0, and 6 threads = 4 threads, so it is not thread-bound either. Quality is unmeasured for every non-IQ file (the IQ file's role cells sit near their ceilings).",
+   "resources": [
+    "cpu",
+    "ram"
+   ]
+  },
+  "no_host_repack": {
+   "full": "llama.cpp --no-host (bypass the pinned host buffer so the CPU's EXTRA buffer types - the AVX2 8x8 repack - can hold the CPU-side weights); only repack-eligible formats gain (Q4_0, Q4_K, IQ4_NL, Q2_K)",
+   "status": "measured on the A3B and the dense 27B (BigHonker, 2026-10-18): writing +10 % (A3B) / +19-25 % (27B Q4_K_M), reading -93 % / -97 % - a per-job option for write-dominated work, not a default",
+   "tested": [
+    "bh-a3b-q40-nohost: bartowski Q4_0 + --no-host, 4 threads, tuned launch: 13,405 MiB repacked with q4_0_8x8 (447 MiB plain); writes 26.19 / 25.64 / 24.11 vs 21.2-24.0 for the same file without it; reads 91.6 / 89.9 tok/s vs ~1,337",
+    "bh-q38-27b-nohost2, MTP2, 4 threads: Q4_0 + --no-host writes 2.06-2.15 (vs 1.43-1.52), reads 7.7; lmstudio Q4_K_M + --no-host writes 2.34-2.38 (vs 1.88-2.01), reads 10.2-10.3 (vs 350-378); CPU_REPACK 9,562 / 9,405 MiB"
+   ],
+   "result": "MEASURED 2026-10-18: --no-host lets llama.cpp repack the CPU-side experts (q4_0_8x8) and writing rises ~10 % at equal bytes (24.1-26.2 vs 21.2-24.0) - so decode is not PURELY memory-bound (my 'a repack cannot help' inference was wrong) - but READING collapses ~17x (91 vs ~1,337 tok/s on a 4K prompt: the GPU can no longer borrow the weights from pinned host memory), i.e. a 4K prompt costs ~45 s before the first token. Any role with a long prompt (agentic coding, W1, long documents) loses far more than 10 % writing buys. The dense 27B backup (long contexts) is the same shape, so its --no-host arm is not run. Revisit only for a short-prompt, long-answer role. 2026-10-18 23:28, the dense 27B: repack raises the CPU half's effective rate from ~19.6 to ~28 GB/s (writing +19-25 % on Q4_K_M) but reading falls to ~10 tok/s (a 4K prompt ~7 min). Break-even per agentic turn is ~400 new prompt tokens per 500 written; above that the normal pinned path wins (1K new + 500 out: ~258 s vs ~310 s). RAM verified: ChannelA-DIMM2 + ChannelB-DIMM2, 4000 MT/s configured - the limit is per-core kernel work, not RAM speed (6 threads = 4 threads).",
+   "resources": [
+    "cpu",
+    "ram"
+   ]
+  }
+ },
+ "resources": [
+  "gpu_compute",
+  "gpu_sched",
+  "vram",
+  "cpu",
+  "ddr4",
+  "ram",
+  "drive_pagefile",
+  "drive_model",
+  "pcie",
+  "engine"
+ ],
+ "couplings": [
+  {
+   "a": "repack_q2k",
+   "b": "mmap",
+   "kind": "conflict",
+   "why": "repacked experts are anonymous memory: past RAM they page through the pagefile drive, not mmap's file read-ahead (varied 8.9-11.3 vs 8.9-14.2, 13:38; C: 97% busy, 14:35)"
+  },
+  {
+   "a": "repack_iq4",
+   "b": "mmap",
+   "kind": "conflict",
+   "why": "same mechanism at 14.4 GB instead of 31 GB - smaller, still anonymous"
+  },
+  {
+   "a": "repack_q2k",
+   "b": "cache_addon",
+   "kind": "requires",
+   "why": "the cache only engages on Q2_K-repacked gate tensors with patches\\moecache_repack_path.py (else hits=0, stack1 14:30)"
+  },
+  {
+   "a": "repack_q2k",
+   "b": "hotness_placement",
+   "kind": "conflict",
+   "why": "repacking all 48 CPU-side layers makes ~50 GB anonymous memory on a 32 GB box - hot48 runs --no-repack"
+  },
+  {
+   "a": "hotness_placement",
+   "b": "mmap",
+   "kind": "requires",
+   "why": "all expert layers CPU-side only fits if they stay file-backed and page from the idle model drive"
+  },
+  {
+   "a": "hotness_placement",
+   "b": "concurrency",
+   "kind": "shifts",
+   "why": "if the cache carries the reads, extra requests stop growing CPU work - reopen batching on top"
+  },
+  {
+   "a": "hotness_placement",
+   "b": "pcie_link",
+   "kind": "shifts",
+   "why": "every cache miss that inserts is an upload over PCIe - link width/gen bounds insert rate"
+  },
+  {
+   "a": "cache_addon",
+   "b": "vram_margin",
+   "kind": "conflict",
+   "why": "slots and free margin draw on the same VRAM"
+  },
+  {
+   "a": "cache_addon",
+   "b": "fitting_cook",
+   "kind": "shifts",
+   "why": "slots cost GPU-side layers -> more CPU-side layers -> more RAM; N=35 with 48 slots hit the cliff (4.1 tok/s)"
+  },
+  {
+   "a": "cache_tuning",
+   "b": "cache_addon",
+   "kind": "shifts",
+   "why": "q4_0 KV frees VRAM that becomes slots; more inserts per step = more PCIe traffic per token"
+  },
+  {
+   "a": "mtp",
+   "b": "mmap",
+   "kind": "shifts",
+   "why": "more tokens per pass = a bigger union of experts touched -> more page-ins on varied work (+45% warm, +10% varied)"
+  },
+  {
+   "a": "mtp",
+   "b": "concurrency",
+   "kind": "shifts",
+   "why": "both multiply tokens per pass; the CPU reads the union of all of them"
+  },
+  {
+   "a": "mtp",
+   "b": "cache_addon",
+   "kind": "stack",
+   "why": "verify passes reuse cached experts - additive"
+  },
+  {
+   "a": "concurrency",
+   "b": "cache_addon",
+   "kind": "requires",
+   "why": "without the cache, aggregate stays flat: each request adds its own experts to CPU work (13:02)"
+  },
+  {
+   "a": "big_ubatch",
+   "b": "cache_addon",
+   "kind": "conflict",
+   "why": "a bigger -ub grows the compute buffer in VRAM, which costs slots or layers"
+  },
+  {
+   "a": "big_ubatch",
+   "b": "vulkan",
+   "kind": "shifts",
+   "why": "Vulkan prefill trails ROCm (93 vs 174 at equal N); big batches may close part of that"
+  },
+  {
+   "a": "lzm_off",
+   "b": "mmap",
+   "kind": "conflict",
+   "why": "lazy off maps the 27 GB per-layer embedding table into the page cache, competing with experts for RAM"
+  },
+  {
+   "a": "fitting_cook",
+   "b": "repack_iq4",
+   "kind": "conflict",
+   "why": "Q2_0 has no repack path: the cook fits RAM but runs plain kernels (warm 14.1 vs 28.4)"
+  },
+  {
+   "a": "pagefile_drive",
+   "b": "repack_q2k",
+   "kind": "shifts",
+   "why": "a fast non-OS pagefile would make anonymous (repacked / -lm none) experts cheap to page - could flip the repack x mmap conflict"
+  },
+  {
+   "a": "pagefile_drive",
+   "b": "fitting_cook",
+   "kind": "shifts",
+   "why": "the fitting cook's advantage is avoiding the pagefile drive; a fast pagefile shrinks that advantage"
+  },
+  {
+   "a": "large_pages",
+   "b": "mmap",
+   "kind": "conflict",
+   "why": "large pages are locked anonymous memory - incompatible with file-backed experts; only for a resident set"
+  },
+  {
+   "a": "large_pages",
+   "b": "fitting_cook",
+   "kind": "stack",
+   "why": "a set that fits RAM can be locked in large pages"
+  },
+  {
+   "a": "cpu_affinity",
+   "b": "threads",
+   "kind": "shifts",
+   "why": "pinning to physical cores changes the best thread count"
+  },
+  {
+   "a": "ram_1to1",
+   "b": "fitting_cook",
+   "kind": "shifts",
+   "why": "1:1 at FCLK 1900 raised the single-CCD read ceiling (warm +6-7%); CPU-side expert time is what a fitting cook also attacks, so re-measure a fitting cook on the new RAM before comparing to old numbers"
+  },
+  {
+   "a": "vulkan",
+   "b": "rocm_prefill_route",
+   "kind": "shifts",
+   "why": "Vulkan wins generation, ROCm wins prefill - per-job choice"
+  },
+  {
+   "a": "whole_layer_split",
+   "b": "threads",
+   "kind": "conflict",
+   "why": "moves attention/DeltaNet to the CPU, the scarce resource (12.5 vs 28.4)"
+  },
+  {
+   "a": "fault_ahead",
+   "b": "mmap",
+   "kind": "requires",
+   "why": "prefetch of routed experts only helps file-backed weights"
+  },
+  {
+   "a": "fault_ahead",
+   "b": "pagefile_drive",
+   "kind": "shifts",
+   "why": "deep queued reads on the model drive vs synchronous faults on the pagefile drive"
+  },
+  {
+   "a": "np1_ub512",
+   "b": "cache_addon",
+   "kind": "shifts",
+   "why": "-np 1 frees ~1 GB of recurrent-state cache (one more layer or slots); -ub sets the compute buffer that competes with slots"
+  },
+  {
+   "a": "np1_ub512",
+   "b": "concurrency",
+   "kind": "conflict",
+   "why": "-np 1 is one slot; batching needs -np N, which costs ~1 GB of recurrent state at -np 4"
+  },
+  {
+   "a": "cache_warm_start",
+   "b": "hotness_placement",
+   "kind": "stack",
+   "why": "pre-filled slots skip the cold climb (7.7 -> 27 over six generations) that a big cache makes longer"
+  },
+  {
+   "a": "cache_warm_start",
+   "b": "task_ordering",
+   "kind": "stack",
+   "why": "a profile per task family pairs with grouping work by task"
+  },
+  {
+   "a": "sparse_attention",
+   "b": "prefix_cache",
+   "kind": "stack",
+   "why": "both only pay at long context: cached prefixes + cheaper attention over them"
+  },
+  {
+   "a": "sparse_attention",
+   "b": "vram_margin",
+   "kind": "shifts",
+   "why": "long context grows KV in VRAM, which costs slots or layers"
+  },
+  {
+   "a": "reasoning_low",
+   "b": "prefix_cache",
+   "kind": "stack",
+   "why": "fewer wasted thinking tokens and no re-prefill: both cut time-to-answer, not tok/s"
+  },
+  {
+   "a": "reasoning_low",
+   "b": "mtp",
+   "kind": "shifts",
+   "why": "thinking text and answer text accept drafts at different rates - acceptance is task-shaped"
+  },
+  {
+   "a": "prefix_cache",
+   "b": "big_ubatch",
+   "kind": "shifts",
+   "why": "a cached prefix removes most prefill, shrinking what big batches buy"
+  },
+  {
+   "a": "ngram_mod",
+   "b": "mtp",
+   "kind": "shifts",
+   "why": "they STACK (--spec-type draft-mtp,ngram-mod, 2026-10-08); the extra n-gram guesses compete with MTP's for verify passes - on the dense 27B the stack measured no gain"
+  },
+  {
+   "a": "task_ordering",
+   "b": "mmap",
+   "kind": "stack",
+   "why": "grouping cells by task keeps one task's experts resident instead of re-paging per cell"
+  },
+  {
+   "a": "vk_env_knobs",
+   "b": "fusion",
+   "kind": "requires",
+   "why": "verify fusion is actually ON in our build before counting it as a win"
+  },
+  {
+   "a": "model_drive_choice",
+   "b": "fault_ahead",
+   "kind": "stack",
+   "why": "prefetch reads from the model drive - the idle fast drive is where it belongs"
+  },
+  {
+   "a": "model_drive_choice",
+   "b": "pagefile_drive",
+   "kind": "conflict",
+   "why": "putting a pagefile on F: would make model reads and paging share one drive"
+  },
+  {
+   "a": "hotness_placement",
+   "b": "fault_ahead",
+   "kind": "requires",
+   "why": "hot48: 82% hits, but the 18% misses page from F: one 4 KB fault at a time (queue 2.6, 220 MB/s vs 930 MB/s at queue 27) - prefetching a routed expert in one deep batch is the cure"
+  },
+  {
+   "a": "expert_deferral",
+   "b": "mtp",
+   "kind": "shifts",
+   "why": "verify batches of 3 tokens: immediate and deferred sets cover different experts per token, the union can double DDR4 reads; KT applies deferral to single-token decode only"
+  },
+  {
+   "a": "expert_deferral",
+   "b": "async_sched_copies",
+   "kind": "requires",
+   "why": "deferral only overlaps if a CPU split can wait on the specific GPU split that produced its input (per-split events), not a full backend synchronize"
+  },
+  {
+   "a": "expert_deferral",
+   "b": "cache_addon",
+   "kind": "stack",
+   "why": "cached experts run on the GPU anyway; deferral hides the CPU share that remains"
+  },
+  {
+   "a": "shexp_overlap",
+   "b": "async_sched_copies",
+   "kind": "requires",
+   "why": "same event-based split sync"
+  },
+  {
+   "a": "async_sched_copies",
+   "b": "np1_ub512",
+   "kind": "shifts",
+   "why": "removes per-split synchronize stalls the scheduler profile counted as waiting"
+  },
+  {
+   "a": "clock_floor",
+   "b": "threads",
+   "kind": "shifts",
+   "why": "a faster GPU segment changes the CPU's share of each token, so the best thread count can move (BH 10-17: t4 still best at 1965 MHz)"
+  },
+  {
+   "a": "clock_floor",
+   "b": "mtp",
+   "kind": "shifts",
+   "why": "MTP amortises per-token GPU overhead; a clock that cannot park shrinks that overhead, so MTP's gain shrinks (BH: MTP lost both ways)"
+  },
+  {
+   "a": "clock_floor",
+   "b": "telemetry",
+   "kind": "conflict",
+   "why": "reading the clock must not load the CPU being measured: nvidia-smi spawned 2x/s cost ~10% on BH's 6 cores; sample in-process (NVML)"
+  },
+  {
+   "a": "strata_context_262k",
+   "b": "cache_tuning",
+   "kind": "tradeoff",
+   "why": "--kv-resident 262144 puts the whole KV (~3 GB int8) on the card: expert-cache hit rate fell to ~77 % (flashnext-strata-045-best), writing at depth rose to 64.4 (no KV streaming) - net win on a 24 GB card; on 12-16 GB cards Strata's setup keeps 32K resident for exactly this reason"
+  },
+  {
+   "a": "strata_hipblaslt_table",
+   "b": "strata_prefill_size",
+   "kind": "compounds",
+   "why": "the table speeds the prefill's dense GEMMs; a bigger chunk (--prefill 8192, the 7900 XTX recipe) gives them bigger, better-tuned shapes - adopted together in the v0.1.45 serving plan"
+  },
+  {
+   "a": "strata_prefill_size",
+   "b": "vram_margin",
+   "kind": "tradeoff",
+   "why": "a bigger prompt chunk needs more scratch VRAM (the recipe pairs --prefill 8192 with --vram-reserve-mib 1024)"
+  },
+  {
+   "a": "strata_parallel",
+   "b": "cache_tuning",
+   "kind": "tradeoff",
+   "why": "each batch slot takes ~0.6 GB of VRAM from the expert cache (Strata BATCHING.md); throughput up, per-request speed down (Strata: 'about 10-25% speed per request on this card')"
+  },
+  {
+   "a": "cpu_fit_quant",
+   "b": "threads",
+   "kind": "shifts",
+   "why": "the threads optimum (4 > 5 > 3 >> 6, B10) was measured with IQ experts, where the CPU half may be COMPUTE-bound; K / repacked Q4_0 kernels move it toward DDR4-bandwidth-bound, so the optimum can move - re-check if the new file's write rate lands near the old one"
+  },
+  {
+   "a": "cpu_fit_quant",
+   "b": "vram_margin",
+   "kind": "shifts",
+   "why": "a Q4 file is ~25-30 % larger than the Q3 one: llama.cpp's fitter (fit 512) puts fewer layers on the 8 GB card, so more of every token is read from RAM - the speed gain from fast kernels is partly paid back here"
+  },
+  {
+   "a": "cpu_fit_quant",
+   "b": "mtp",
+   "kind": "shifts",
+   "why": "MTP's verify cost depends on what each extra token reads from RAM; a faster CPU half changes the break-even (dense 27B: drafting attacks the bandwidth floor; split A3B: it lost at the old file)"
+  },
+  {
+   "a": "no_host_repack",
+   "b": "big_ubatch",
+   "kind": "conflict",
+   "why": "-ub 2048 reading (2.4x on BigHonker) works because the GPU borrows pinned CPU-side weights per batch; --no-host takes the weights out of pinned memory, so reading is expected to fall - the price of faster CPU kernels"
+  },
+  {
+   "a": "no_host_repack",
+   "b": "cpu_fit_quant",
+   "kind": "shifts",
+   "why": "only repack-eligible formats (Q4_0, Q4_K, IQ4_NL, Q2_K) gain from --no-host; the IQ3_XXS/IQ4_XS experts of the tuned A3B file have no repack path, so for that file it only costs the pinned placement"
+  },
+  {
+   "a": "no_host_repack",
+   "b": "threads",
+   "kind": "shifts",
+   "why": "repacked 8x8 kernels do more work per memory read, moving the CPU half from compute- toward bandwidth-bound; the thread optimum measured on plain kernels can move"
+  }
+ ],
+ "serving_config": [
+  "vulkan",
+  "repack_iq4",
+  "mtp",
+  "np1_ub512"
+ ]
+}

@@ -1,0 +1,77 @@
+services:
+  # Tolkien: the tablet factory's order taker. network_mode: host, so the container sees both the LAN and the
+  # tablets' USB segment directly, the reason this box is the tablet head. Its settings come from tolkien.env;
+  # ENGINE_HOME (this folder's .env) is the folder that holds the engine builds and the models.
+  tablet-foundry:
+    image: arrstack-tablet-foundry:latest
+    container_name: tablet-foundry
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - /opt/arrstack/tolkien.env
+    volumes:
+      - /opt/arrstack/tablet-foundry:/tabfoundry
+      - /opt/arrstack/secrets/tabcluster_key:/run/secrets/tabcluster_key:ro
+      - /mnt/documentation:/docs:ro
+      - /mnt/ssdshared:/ssdshared
+      - /mnt/bigshared:/bigshared
+      - ${ENGINE_HOME:?set ENGINE_HOME in this folder's .env}/llama.cpp/build-x86/bin:/llama/bin:ro
+      - ${ENGINE_HOME:?set ENGINE_HOME in this folder's .env}/llama.cpp/build-vulkan/bin:/llama/vulkan:ro
+      - /usr/lib/x86_64-linux-gnu:/hostlib:ro
+      - /usr/share/glvnd:/usr/share/glvnd:ro
+      - /usr/share/vulkan/icd.d/nvidia_icd.json:/usr/share/vulkan/icd.d/nvidia_icd.json:ro
+      - ${ENGINE_HOME:?set ENGINE_HOME in this folder's .env}/llama-rpc-build/out:/llama/arm64:ro
+      - ${ENGINE_HOME:?set ENGINE_HOME in this folder's .env}/llama.cpp-rpcasync/build-x86/bin:/llama/next/bin:ro
+      - ${ENGINE_HOME:?set ENGINE_HOME in this folder's .env}/llama.cpp-rpcasync/build-vulkan/bin:/llama/next/vulkan:ro
+      - ${ENGINE_HOME:?set ENGINE_HOME in this folder's .env}/llama-build-rpcasync/arm64:/llama/next/arm64:ro
+      - ${ENGINE_HOME:?set ENGINE_HOME in this folder's .env}/llama.cpp-latest/build-cuda-114/bin:/llama/cuda:ro
+      - ${ENGINE_HOME:?set ENGINE_HOME in this folder's .env}/llama.cpp-hotstore/build-cuda-114/bin:/llama/hotstore:ro
+      - ${ENGINE_HOME:?set ENGINE_HOME in this folder's .env}/models:/models:ro
+    working_dir: /app
+    command: ["python", "tablet_runner.py"]
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidia1:/dev/nvidia1
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-modeset:/dev/nvidia-modeset
+
+  # The watchdog supervises tablet-foundry from outside it. On rigby the USB segment is LOCAL, so
+  # its WiFi-independent reach probe points at ourselves (127.0.0.1) instead of hopping through another box.
+  # Tolkien telemetry logger (one of Tolkien's organs): continuous history for rigby, its GT 730 and the
+  # tablets. Own container so it keeps recording while the order taker is down or redeployed. pid: host
+  # = it sees every stage process; nvidia-smi is the host's, run under the host loader.
+  tolkien-telemetry:
+    image: arrstack-tablet-foundry:latest
+    container_name: tolkien-telemetry
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    env_file:
+      - /opt/arrstack/tolkien.env
+    volumes:
+      - /opt/arrstack/tablet-foundry:/tabfoundry
+      - /usr/lib/x86_64-linux-gnu:/hostlib:ro
+      - /usr/bin/nvidia-smi:/usr/bin/nvidia-smi:ro
+    working_dir: /app
+    command: ["python", "-u", "tolkien_telemetry.py"]
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidia1:/dev/nvidia1
+      - /dev/nvidiactl:/dev/nvidiactl
+
+  tablet-watchdog:
+    image: arrstack-tablet-watchdog:latest
+    container_name: tablet-watchdog
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - /opt/arrstack/tolkien.env
+    environment:
+      - TABLET_WATCH_RIGBY=127.0.0.1
+    volumes:
+      - /opt/arrstack/tablet-foundry:/tabfoundry
+      - /opt/arrstack/secrets/tabcluster_key:/run/secrets/tabcluster_key:ro
+      - /mnt/documentation:/docs:ro
+    working_dir: /app
+    command: ["python", "tablet_watch.py"]

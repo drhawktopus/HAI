@@ -1,0 +1,8 @@
+{
+ "mothership": {
+  "qwen3.8-flash-next-strata-q2_0": {
+   "plan": "F:\\foundry\\workspace\\flashnext\\plans\\strata-serve-q2_0-v045-vision.20261105.json",
+   "ctx": 262144
+  }
+ }
+}

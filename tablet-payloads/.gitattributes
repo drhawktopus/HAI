@@ -1,0 +1,2 @@
+# The working tree IS the live payload folder the tablets read: git never rewrites a line ending here.
+* -text

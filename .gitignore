@@ -1,0 +1,33 @@
+# Python's own caches and the suite's scratch; never source
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+scratch-check-*/
+*.log
+
+# What your lab adds when you set HAI up: your settings, secrets, state, documents, uploads and chats. They stay on
+# your machines; never commit them (a fork pushed with these in it publishes them).
+examples/*/settings.env
+examples/*/sidecars.env
+examples/*/relay.env
+examples/*/door.env
+examples/*/tolkien.env
+examples/*/.env
+examples/*/state/
+examples/*/secrets/
+examples/*/library/
+examples/*/usercorpora/
+examples/*/coding-state/
+examples/*/coding-workspaces/
+examples/*/liaison-state/
+examples/*/shares/
+examples/*/jobs/
+examples/*/tablet-foundry/
+examples/*/deploy-backups/
+examples/*/searxng/*
+!examples/*/searxng/settings.example.yml
+etc/*.env
+foundry/workspace/flashnext/llama-swap.yaml
+foundry/lab.env
+fellowship/roster.json

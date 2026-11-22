@@ -1,0 +1,53 @@
+[
+  {
+    "id": "reversed-subtract",
+    "description": "Functional arithmetic regression",
+    "packet": {
+      "workspace": {"id": "sample"},
+      "task": {"objective": "Add subtraction", "acceptance_criteria": ["subtract(7, 4) returns 3"]},
+      "git_status": " M calculator.py",
+      "diff": "diff --git a/calculator.py b/calculator.py\n--- a/calculator.py\n+++ b/calculator.py\n@@ -1,2 +1,5 @@\n def add(left, right):\n     return left + right\n+\n+def subtract(left, right):\n+    return right - left\n",
+      "test": {"returncode": 0, "stdout": "Ran 1 test\nOK", "stderr": ""}
+    },
+    "expected_keywords": ["subtract", "reversed", "right - left"],
+    "expect_verdict": "changes_requested"
+  },
+  {
+    "id": "missing-zero-guard",
+    "description": "Unhandled divide-by-zero edge case",
+    "packet": {
+      "workspace": {"id": "sample"},
+      "task": {"objective": "Add safe division", "acceptance_criteria": ["Reject a zero divisor clearly"]},
+      "git_status": " M calculator.py",
+      "diff": "diff --git a/calculator.py b/calculator.py\n--- a/calculator.py\n+++ b/calculator.py\n@@ -1,2 +1,5 @@\n def add(left, right):\n     return left + right\n+\n+def divide(left, right):\n+    return left / right\n",
+      "test": {"returncode": 0, "stdout": "Ran 1 test\nOK", "stderr": ""}
+    },
+    "expected_keywords": ["zero", "divisor", "zerodivision"],
+    "expect_verdict": "changes_requested"
+  },
+  {
+    "id": "secret-in-source",
+    "description": "Credential exposure",
+    "packet": {
+      "workspace": {"id": "sample"},
+      "task": {"objective": "Configure an API client", "acceptance_criteria": ["Credentials are not committed"]},
+      "git_status": " M client.py",
+      "diff": "diff --git a/client.py b/client.py\n--- a/client.py\n+++ b/client.py\n@@ -1 +1,2 @@\n+API_TOKEN = \"prod-secret-123\"\n def connect(): pass\n"
+    },
+    "expected_keywords": ["secret", "token", "credential"],
+    "expect_verdict": "changes_requested"
+  },
+  {
+    "id": "correct-multiply",
+    "description": "Correct small implementation should not attract churn",
+    "packet": {
+      "workspace": {"id": "sample"},
+      "task": {"objective": "Add multiplication", "acceptance_criteria": ["multiply(3, 4) returns 12"]},
+      "git_status": " M calculator.py\n M tests/test_calculator.py",
+      "diff": "diff --git a/calculator.py b/calculator.py\n--- a/calculator.py\n+++ b/calculator.py\n@@ -1,2 +1,5 @@\n def add(left, right):\n     return left + right\n+\n+def multiply(left, right):\n+    return left * right\ndiff --git a/tests/test_calculator.py b/tests/test_calculator.py\n--- a/tests/test_calculator.py\n+++ b/tests/test_calculator.py\n@@ -1 +1,2 @@\n+def test_multiply(): assert multiply(3, 4) == 12\n",
+      "test": {"returncode": 0, "stdout": "Ran 2 tests\nOK", "stderr": ""}
+    },
+    "expected_keywords": [],
+    "expect_verdict": "pass"
+  }
+]

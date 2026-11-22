@@ -1,0 +1,13 @@
+[Unit]
+Description=Fellowship model store (HTTP file server for tablet on-demand staging)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 -m http.server @PORT@ --bind 0.0.0.0 --directory @DIR@
+Restart=always
+RestartSec=5
+User=@USER@
+
+[Install]
+WantedBy=multi-user.target

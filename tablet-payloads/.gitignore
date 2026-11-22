@@ -1,0 +1,7 @@
+# The tablets' payloads: each top-level .py here is a human-reviewed program the tablet factory may run
+# (tablet_orders.payload_names lists them). Git holds them as they run. Left out: deploy backups and caches, and a1/,
+# the A1 payload `fleet_deploy --rigby-a1` copies here from its source in the menu's repo (hard-bench).
+*.bak*
+*.v1-bak
+__pycache__/
+a1/

@@ -1,0 +1,60 @@
+# Regenerable / build noise
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Active-workflow state that is not source
+/workspaces/
+/backups/
+
+# Local timestamped archives (they live on the Z: array, not in git)
+*.bak
+*.bak-*
+*.bak.*
+*.orig
+*.preclean-*
+
+# Secrets / credentials — never track, even locally
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+*.p12
+
+# Pre-change copies (e.g. *.before-memory-fix-<stamp>) go to Z:\Archives, not the mirror (2026-11-14 sweep)
+*.before-*
+
+# workspace\: the per-order PAYLOADS (code, plus the three config files code reads) are part of the lab and tracked.
+# What orders produce there (results, logs, delivered output, .done markers) is not part of the lab (the owner, 2026-11-15:
+# "those are results to things that we're doing those aren't necessarily things that are a part of the lab"); it stays
+# on disk and is not tracked.
+workspace/**
+!workspace/**/
+!workspace/**/*.py
+!workspace/**/*.ps1
+!workspace/**/*.sh
+!workspace/**/*.cmd
+!workspace/**/*.bat
+!workspace/**/*.vbs
+!workspace/**/*.js
+!workspace/**/*.yaml
+!workspace/**/*.yml
+!workspace/**/*.toml
+!workspace/**/README.md
+!workspace/flashnext/arsenal.json
+!workspace/flashnext/strata_served.json
+!workspace/chatprefix/turn2_item.json
+
+# What an order DELIVERS is its output, even when that output is code (an A1 solution, a run's settings file): the
+# re-includes above would track it, so a delivered folder is ignored whole, after them. (Before this rule 103 such files
+# were tracked and reached the public build.)
+workspace/**/delivered/
+# A box's own llama-swap config, made from llama-swap.example.yaml, holds that box's paths and ports: never committed.
+workspace/flashnext/llama-swap.yaml
+*.exe
+*.obj
+*.lib
+*.dll
+*.pdb

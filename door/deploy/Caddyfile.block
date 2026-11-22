@@ -1,0 +1,25 @@
+
+# Uhura: MCP door to approved library documents. A template: {UHURA_HOSTNAME} is the public name,
+# {UHURA_UPSTREAM} the address:port of Uhura's container as the proxy reaches it. Off switch: touch /etc/caddy/uhura.off
+# Browsers may reach sign-in and discovery. Tools, tokens and registration answer only the vendors'
+# published ranges (refreshed daily by uhura-ranges.timer). The bearer check inside Uhura still applies.
+{UHURA_HOSTNAME} {
+	import /etc/caddy/uhura-ranges.caddy
+	@off file {
+		root /etc/caddy
+		try_files /uhura.off
+	}
+	@browser path /authorize /authorize/* /consent /consent/* /auth/callback /auth/callback/* /.well-known/*
+	@internal path /status /status/*
+	route {
+		respond @off "Uhura is switched off." 503
+		respond @internal 403
+		reverse_proxy @browser {UHURA_UPSTREAM} {
+			header_up Cookie "(^|;\s*)session=[^;]*" ""
+		}
+		reverse_proxy @vendors {UHURA_UPSTREAM} {
+			header_up -Cookie
+		}
+		respond 403
+	}
+}

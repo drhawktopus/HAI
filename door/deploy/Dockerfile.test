@@ -1,0 +1,9 @@
+# Uhura's test image: the SHIPPED image plus pytest, so the gate tests the same Python and the same fastmcp that serve.
+# Built and run by deploy/uhura_gate.sh. Never deployed.
+FROM uhura-uhura:latest
+USER root
+RUN pip install --no-cache-dir pytest==8.3.4
+# git: the code publisher lists each repo's tracked files with it (on Sundae it runs on the host, where git is)
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends git >/dev/null && rm -rf /var/lib/apt/lists/*
+USER uhura
+ENV PYTHONDONTWRITEBYTECODE=1

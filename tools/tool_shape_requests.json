@@ -1,0 +1,23 @@
+[
+ {"text": "What's everyone watching on Plex right now?", "expected": ["check_plex"], "kind": "labelled"},
+ {"text": "Are the homelab services all up, Plex and the others?", "expected": ["check_services", "docker_status"], "kind": "labelled"},
+ {"text": "How much disk space is left on the media drives?", "expected": ["disk_usage"], "kind": "labelled"},
+ {"text": "Which libraries does the Plex server have?", "expected": ["plex_sections"], "kind": "labelled"},
+ {"text": "Show me the last few lines of the caddy container's logs.", "expected": ["docker_logs"], "kind": "labelled"},
+ {"text": "Restart the caddy container please.", "expected": ["docker_restart"], "kind": "labelled"},
+ {"text": "Turn off the living room lights.", "expected": ["ha_control_device"], "kind": "labelled"},
+ {"text": "Which lights are on in the house right now?", "expected": ["ha_get_devices"], "kind": "labelled"},
+ {"text": "Wake up the BigHonker machine.", "expected": ["wake_host"], "kind": "labelled"},
+ {"text": "What's the fleet doing right now, is anything running?", "expected": ["fleet_status"], "kind": "labelled"},
+ {"text": "Find what our docs say about the UPS setup.", "expected": ["search_docs"], "kind": "labelled"},
+ {"text": "What's the latest news on AMD's next GPU?", "expected": ["web_search"], "kind": "labelled"},
+ {"text": "Draw me a picture of a lighthouse at dusk.", "expected": ["generate_image"], "kind": "labelled"},
+ {"text": "Please remember that I prefer metric units.", "expected": ["remember"], "kind": "labelled"},
+ {"text": "Are there any uncommitted changes in the homelab config?", "expected": ["git_status"], "kind": "labelled"},
+ {"text": "Propose a cleanup of the dead code in scheduler.py.", "expected": ["code_propose_cleanup"], "kind": "labelled"},
+ {"text": "Carve the H1 headings out of the Runbook domain.", "expected": ["library_carve_h1"], "kind": "labelled"},
+ {"text": "Save this into my notes library: the cabin trip is in May.", "expected": ["save_to_corpus", "remember"], "kind": "labelled"},
+ {"text": "thanks, that's all for now", "expected": [], "kind": "negative"},
+ {"text": "What's 17 times 23?", "expected": [], "kind": "negative"},
+ {"text": "Tell me a joke about cats.", "expected": [], "kind": "negative"}
+]

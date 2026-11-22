@@ -1,0 +1,9 @@
+{
+  "authors": ["lab"],
+  "files": {
+    "solution": ["control_add.py"],
+    "test": ["control_add_test.py"],
+    "example": [".meta/example.py"]
+  },
+  "blurb": "The A1 agentic payload's known-positive control: proves the tool loop, the server and the hidden-test grade end to end."
+}
