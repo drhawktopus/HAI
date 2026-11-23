@@ -6,6 +6,9 @@ set -e
 [ -r /etc/default/uhura ] && . /etc/default/uhura
 UHURA_HOME=${UHURA_HOME:-/opt/uhura}; UHURA_USER=${UHURA_USER:-uhura}; UHURA_LIBRARY=${UHURA_LIBRARY:-/srv/library}
 CHATGPT_HOME=${CHATGPT_HOME:-/srv/chatgpt-home}
+# How often the refresh runs, in seconds: the timer below and the publisher's own report (--every) read this one value,
+# so the door can tell a quiet publisher from a dead one.
+UHURA_PUBLISH_EVERY_S=${UHURA_PUBLISH_EVERY_S:-900}
 sudo -n tee /etc/systemd/system/uhura-publish.service >/dev/null <<UNIT
 [Unit]
 Description=Refresh Uhura's documents from the library and the lab's code
@@ -17,15 +20,15 @@ User=$UHURA_USER
 Environment=UHURA_LIBRARY=$UHURA_LIBRARY
 Environment=UHURA_CODE_ROOT=${UHURA_CODE_ROOT:-}
 Environment=UHURA_PRIVATE_RULES=${UHURA_PRIVATE_RULES:-}
-ExecStart=/usr/bin/python3 $UHURA_HOME/deploy/publish_library.py $UHURA_HOME/published $UHURA_HOME/publish-report.json --status $UHURA_HOME/publish-status.json
+ExecStart=/usr/bin/python3 $UHURA_HOME/deploy/publish_library.py $UHURA_HOME/published $UHURA_HOME/publish-report.json --status $UHURA_HOME/publish-status.json --every $UHURA_PUBLISH_EVERY_S
 UNIT
-sudo -n tee /etc/systemd/system/uhura-publish.timer >/dev/null <<'UNIT'
+sudo -n tee /etc/systemd/system/uhura-publish.timer >/dev/null <<UNIT
 [Unit]
-Description=Refresh Uhura's documents every 15 minutes
+Description=Refresh Uhura's documents every $UHURA_PUBLISH_EVERY_S seconds
 
 [Timer]
 OnBootSec=5min
-OnUnitActiveSec=15min
+OnUnitActiveSec=${UHURA_PUBLISH_EVERY_S}s
 Persistent=true
 
 [Install]

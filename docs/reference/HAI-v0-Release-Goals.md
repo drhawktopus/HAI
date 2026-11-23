@@ -66,22 +66,6 @@ Status and the work list live elsewhere: `Reference\CURRENT-PROJECTS.md` ([MAIN]
   is meant to be foundational, so even if new models release tomorrow our research can still be used to find good
   starting configs"*. Where it lands: `hai-release\public\docs\tuning-guide.md` (shipped as `docs/tuning-guide.md`).
 
-## 5. How it gets published
-
-- 2026-11-15: *"Do not publish anything until we've reviewed them together. I want to ensure that there are no weird
-  leaks."* Publishing is `hai-release\instruments\publish_v0.py --go`, only on his word.
-- The README/NOTICE voice is approved. On 2026-11-18 the README was put in front of him exactly as it would publish,
-  and he said *"That sounds pretty good to me"*; on 2026-11-21 he added *"I already gave notes for the notices and
-  readme s"*. Later edits are fact updates in that voice (what ships, what is built); they need no new approval.
-- the owner's call: the go. Everything else is decided from this doc.
-- 2026-11-21: rotating the NVR password and retiring Softserve's clock-lock task are lab housekeeping, not v0: *"those
-  two aren't really HAI v0 things are they? Just housekeeping?"*. This holds because the public repo is one fresh
-  commit with none of the Lab history, and the build refuses any locker value in the copy.
-- Repo name `HAI` (2026-11-15). People he has shared his GitHub with may already be looking, so it has to be good.
-- How he wants it worked: concise reports, no walls of text (2026-11-16); efficient, not lazy (2026-11-15); use the
-  lab intelligently, mechanical work done mechanically (2026-11-16); don't freak out or start a work frenzy when
-  corrected (2026-11-19).
-
 ## The ways I have failed this, so they are recognisable
 
 - Collapsing v0 to one project or one machine (2026-11-17), or treating publishing as developing.

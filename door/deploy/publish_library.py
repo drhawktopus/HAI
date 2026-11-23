@@ -284,6 +284,11 @@ def build():
     return rows, files
 
 
+# This run's summary, beside the documents, for the door's health check (uhura.health). The door serves only .md files,
+# so it is never served; sync() never removes it. The same name is uhura.PUBLISH_STATUS (a test pins them equal).
+SERVED_STATUS = ".publish-status.json"
+
+
 def sync(out_dir, files):
     """Update in place, one atomic file at a time, and remove what is no longer approved."""
     os.makedirs(out_dir, exist_ok=True)
@@ -302,6 +307,8 @@ def sync(out_dir, files):
             changed += 1
         os.utime(target, (mtime, mtime))
     for entry in os.scandir(out_dir):
+        if entry.name == SERVED_STATUS and not entry.is_symlink():
+            continue
         if entry.name not in files and entry.is_file(follow_symlinks=False) or entry.is_symlink():
             os.remove(entry.path)
             removed += 1
@@ -313,6 +320,8 @@ def main(argv):
         sys.exit("publish_library: set UHURA_LIBRARY (the library folder to publish from)")
     out_dir, report = argv[1], argv[2]
     status_file = argv[argv.index("--status") + 1] if "--status" in argv else None
+    # how often the timer runs this, so the door can tell a quiet publisher from a dead one (install_publisher.sh)
+    every_s = int(argv[argv.index("--every") + 1]) if "--every" in argv else None
     rows, files = build()
     changed, removed = sync(out_dir, files)
     with open(report, "w", encoding="utf-8") as f:
@@ -322,10 +331,15 @@ def main(argv):
         counts[r["status"]] = counts.get(r["status"], 0) + 1
     summary = {"at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "read": len(rows), "published": len(files),
                "changed": changed, "removed": removed, "statuses": counts, "kept_out_secret": [r["doc"] for r in rows if r["status"] == "secret-pattern"],
-               "code": dict(CODE_STATUS) or {"off": "UHURA_CODE_ROOT is not set"}}
+               "code": dict(CODE_STATUS) or {"off": "UHURA_CODE_ROOT is not set"}, "every_s": every_s}
     if status_file:
         with open(status_file, "w", encoding="utf-8") as f:
             json.dump(summary, f)
+    fd, tmp = tempfile.mkstemp(dir=out_dir, prefix=".pub-", suffix=".tmp")
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        json.dump(summary, f)
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, os.path.join(out_dir, SERVED_STATUS))
     print(json.dumps(summary))
 
 

@@ -44,7 +44,7 @@ detail. Legacy rows were mapped best-effort on 2026-08-26 — correct on sight i
 | #38 | **Lab update system — a notifier for every driver / program / OS update, staged and tested, rolled over blue/green, smart archiving** (the owner, 2026-10-22, after Mothership's install-triggered 0x9F) — scope in PROJECT-BACKLOG; home [[Lab-Update-Inventory-38]] | ACTIVE — **BUILT 2026-11-04**, every class running nightly; open: AMD drivers wait on the owner's Acronis console step; engine rebuilds stay a person's (lab-patched) |
 | #39 | **Jade Empire: the owner Remake 1.0 — a private 4K remake / remaster-plus of *Jade Empire: Special Edition* (Steam copy), couch-playable on Mothership's display** — CAMPAIGN — source packet in `Archive\jade-empire-remake-proposal-source-20261024\`; charter [[39-CHARTER]]; scope history in PROJECT-BACKLOG § "CAMPAIGN #39" | KICKED OFF 2026-10-30 — Phase 1 (foundations & the adopt question) |
 
-**Next free: #40.**
+**Next free: #41.**
 
 ## Campaigns — a classification, not a second numbering space
 

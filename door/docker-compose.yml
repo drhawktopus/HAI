@@ -57,10 +57,11 @@ services:
       # the owner's filtered transcripts, written by deploy/publish_transcripts.py
       - ${UHURA_TRANSCRIPTS_DIR:?set UHURA_TRANSCRIPTS_DIR in .env}:/transcripts:ro
     read_only: true
-    # Healthy = she answers on her own port with a real library (a documents count of 0 means the publisher's folder
-    # is empty, which serves nothing). Reports only: `docker ps` shows it, and the dashboard tile reads the same /status.
+    # Healthy = she answers on her own port and serves what she should: the library, the code (when the publisher
+    # publishes code), the transcripts, from a publisher that is still running (uhura.health names each problem).
+    # Reports only: `docker ps` shows it, and the dashboard tile reads the same /status.
     healthcheck:
-      test: ["CMD", "python", "-c", "import json,sys,urllib.request as u; d=json.load(u.urlopen('http://127.0.0.1:8000/status', timeout=5)); sys.exit(0 if d.get('up') and d.get('documents', 0) > 0 else 1)"]
+      test: ["CMD", "python", "-c", "import json,sys,urllib.request as u; d=json.load(u.urlopen('http://127.0.0.1:8000/status', timeout=5)); sys.exit(0 if d.get('up') and d.get('healthy') is True else 1)"]
       interval: 60s
       timeout: 10s
       retries: 3

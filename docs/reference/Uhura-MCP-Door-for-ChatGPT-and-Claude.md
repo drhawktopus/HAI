@@ -21,7 +21,7 @@
 | Allowed callers of tools and tokens | Anthropic and OpenAI published ranges, `/etc/caddy/uhura-ranges.caddy`, refreshed daily by `uhura-ranges.timer` on the droplet. Sign-in pages and discovery are open to browsers |
 | Sign-in | Google, through FastMCP's OAuth proxy. Google client "Uhura MCP" in project `onboarding-hawktopus`. Only the owner's Google-verified account passes, checked on every request |
 | Secrets | `Reference\Credentials\uhura-credentials.md`; live copy `/opt/arrstack/uhura/.env` (mode 600) |
-| Health | Docker health check on `uhura` every 60 s: `/status` must answer with `up` and a library of more than 0 documents. Reports only (`docker ps` shows `(healthy)`); the Home AI tile "Uhura" reads the same `/status`. Proved 2026-11-07 with two decoys that both failed it |
+| Health | `uhura.health`, from what she serves and the publisher's own report (`published/.publish-status.json`, written each run beside the documents, never served, never removed by a sync). Unhealthy, naming the problem, when: no library documents; the report cannot be read; the last code run failed, or code is on and none is served; the publisher missed 3 of its own runs, or its cadence is unknown; the transcript store is unreadable or empty. `/status` carries `healthy`, `problems`, `problem` and the counts (`library`, `code`, `transcripts`). The Docker health check (every 60 s) reads `healthy`; reports only (`docker ps` shows `(healthy)`). The Home AI tile "Uhura" shows Health: ✅ Healthy or the problem. Until 2026-11-22 it counted documents only, so a failed code run and an empty transcript store both read green. Proved live 2026-11-22 with two decoys (a failed code run, a publisher two hours silent) that both read unhealthy; `test_health.py` pins every case and the seam |
 | Audit log | `/opt/arrstack/uhura/state/audit.jsonl`: account, app, tool, document name and size, never contents |
 
 **The owner's name in Uhura's texts is `UHURA_OWNER_NAME`** (its compose sets the lab's; unset it says "the owner"),
@@ -150,7 +150,7 @@ image plus pytest, `deploy/Dockerfile.test`) on `uhura-gate-net`, an internal Do
 Other tests: `deploy/attack.py` (outside attacks; the `--direct` flag skips the droplet), `deploy/guard_decoys.sh` (run on Sundae), `deploy/signed_in.py`
 (real Google sign-in with a throwaway client and a temporary loopback return address). `attack.py` and `guard_decoys.sh` restart or switch things, so do not run them while it is in use.
 
-**Not built:** rate limiting (the droplet's Caddy lacks the module; `fail2ban` covers ssh only) and a dashboard tile. **Not tested:** the phone apps.
+**Not built:** rate limiting (the droplet's Caddy lacks the module; `fail2ban` covers ssh only). **Not tested:** the phone apps.
 
 ## Trouble
 
@@ -158,6 +158,14 @@ Other tests: `deploy/attack.py` (outside attacks; the `--direct` flag skips the 
 - **Uhura keeps restarting and logs `refuses to start: it can reach lab address`:** netguard's rules are gone. `docker restart uhura-netguard` reapplies them.
 - **A DNS failure inside the container:** Docker forwards lookups from inside the namespace, so a private resolver is blocked. The compose file sets public DNS on purpose.
 - **Connector asks to sign in again:** Google or the client lost the renewal. Reconnect from the app. Changing `UHURA_JWT_KEY` signs every client out.
+- **The Uhura tile, or `docker ps`, says unhealthy:** read `problem` in `curl -s http://127.0.0.1:8478/status` on Sundae, then:
+  - *the last code run failed*: `publish-status.json`'s `"code"` has the error; the library still refreshes.
+  - *has not run for N min*: `systemctl status uhura-publish.timer uhura-publish.service`.
+  - *cadence or last run time is unknown*: the unit lacks `--every`; rerun `deploy/install_publisher.sh` (it takes
+    `UHURA_PUBLISH_EVERY_S`, default 900, for the timer and the report alike).
+  - *transcript store cannot be read / no transcripts*: the transcripts mount or Softserve's publisher task
+    ("Transcripts and manual refresh" above).
+  - *report cannot be read*: the publisher has not run since a ship; it writes the report on its next run.
 
 ## The door's settings files (2026-11-19)
 

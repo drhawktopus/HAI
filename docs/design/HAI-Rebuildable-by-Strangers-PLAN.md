@@ -1,8 +1,8 @@
 # HAI rebuildable by strangers — THE PLAN: public repo, head and foundry roles, linked-device roster, network discovery, HAIinstaller.exe and HAI.exe
 
 **STATUS: A PLAN. Nothing in this document is built unless its milestone's status line says so.** Written 2026-11-15
-by Claude (Fable) with the owner, for execution by a later session. Not registered as a numbered project: [[PROJECT-REGISTRY]]
-decides that, and the owner has not numbered it. The idea's home, the owner's quotes and the measured state are in
+by Claude (Fable) with the owner, for execution by a later session. **Project #40** in [[PROJECT-REGISTRY]] (numbered by
+the owner 2026-11-22, after v0 was released). The idea's home, the owner's quotes and the measured state are in
 PROJECT-BACKLOG § "PRE-PROJECT IDEA: HAI REBUILDABLE BY STRANGERS"; the day's record is
 2026-11-15-claude-hai-repeatability.
 
@@ -513,8 +513,8 @@ chat `c6a260860dca` |
 | B2 | The menu machinery passes the publish check: its stories out through the #30 pipeline, the one adult-rule match in `advisor_tasks.py` | the story rule and the adult rule (§ 6) | **2026-11-17:** adult match DONE (`img_forest_v2`, versioned, hard-bench `d5cc385`). Stories: the menu repo is a cleanup mirror (`menu`, Kirk `2bec404`; a virtual environment under any name is skipped, `6c12644` + `Lab/bin` `8e996e9`); 424 candidates in 285 files (the whole repo's own code, as [[30e-CODE-NARRATIVE-CLEANUP]] cleans the lab's code, not only the public copy). **2026-11-17 night:** the first finished drafting run (`ecd0c8e5b33c`) is VOID: the drafter forced thinking OFF for the 27B (class 13a, a sandbagged cell; the owner: the menu applied incorrectly). Fixed at both ends and live: the cleanup order carries the weighed row's `{POLICY_THINK_ARGS}` / `{POLICY_TEMPERATURE_ARGS}` (Kirk `7c193b4`, gate 4111) and `triage_code.py` v3 sends them through the factory's shared call (`fleet_deploy`, three suites 719 green, foundry `7f0ea87`). Doc resubmitted: order **`239ba7dca480`** on Mothership, 424 candidates. **DONE 2026-11-18 00:55:** the owner had Claude draft the 424 by hand (00:50: *"let's just have you do it now"*); reviewed with the pipeline's instruments, applied through the gated tool (423 rewrites, 1 cut, 143 files, originals in `Z:\Archives\code-preclean\menu`), two more inside script strings by hand; the menu reads 0 stories, its tests as before (227, the one known live-data red), committed. The publish check: STAGED_OK, 847 files. The detector's reach is D13 (ruled, done) |
 | B3 | The six names left in code (step 3), sorted by the ruling's test (does it stop another lab WORKING?) | hard-coded device names make it unadaptable (11-15: *"They wouldn't be able to send stuff to 'mothership'"*) | **DONE 2026-11-17:** `code_cleanup.CODE_MIRRORS` named real folders, so it is the `CODE_MIRRORS` setting (default: the public tree's folders; the lab's value in the compose override; Kirk `2bec404`). The other five are LABELS that work in any lab as they are (`escalate_to_mothership` escalates to whatever holds the lead seat; Tolkien's `rigby_*` keys and capability ids are protocol field names; the `softserve-transcripts` host key is the name a lab registers its transcript publisher under; one doc's filename): later list |
 | B4 | The public defaults: an empty device list and an example | *"an empty default list and just a little like example on it"* (11-15); device names are not private, addresses are | **DONE 2026-11-17:** with no roster file the head is one device holding every role (2.3, live); the worked example is the lab's own roster, which ships with the head's tests and carries names and cards, no addresses; the quick-start points at it **2026-11-18 (Doc's review):** the fixture also carries three of the lab's drive paths (`F:\ai-toolkit\venv`, `F:\comfy-bench`, `Z:\Datasets`); they stay: the fixture IS the lab's own roster and the head's tests pin it against the old tables (generalizing them went red), and a drive path is not an address. |
-| B8 | README and licence text | D1; public wording is his | drafts written |
-| B9 | His go (3.6) | outward-facing | — |
+| B8 | README and licence text | D1; public wording is his | **DONE:** the voice approved 2026-11-18 (*"That sounds pretty good to me"*), the NOTICE 2026-11-21 (goals doc § 5) |
+| B9 | His go (3.6) | outward-facing | **DONE 2026-11-22:** *"Let's publish 🔥🔥🔥"*; published, checked on GitHub (Status, above) |
 
 the owner, 2026-11-17: *"I'm expecting the exact lab that I have to just go into GitHub and then have the variables and stuff
 replaced for things that are supposed to be specific to my lab … it should already be working because it works in my
@@ -644,7 +644,7 @@ leaves the old setting in force. (A job surviving the restart is Quick Resume's,
 | D8 | Do the house tools (media stack, Home Assistant, energy) ship | **RULED 2026-11-15: they ship, as part of the standard kit.** *"It would make sense to ship the house tools, I don't see why we wouldn't. It seems like anything we've developed so far can become a part of the standard kit that I'm shipping it with."* Everything the lab has developed is in scope for the kit unless it falls in D7's small area |
 | D9 | What sits behind `HAI.exe` on a stranger's Windows machine | Needs the measurement in 7.1 first |
 | D10 | The 12 leftover one-time tasks | **No new ruling needed:** his standing rule (2026-07-26, *"don't leave old background tasks hanging"*) and today's (*"any handmade schedule tasks low-key shouldn't exist"* unless he asked for them) cover it. All 12 measured inert on 2026-11-15 (no next run, no repeat, last ran 2026-06-28 to 2026-10-26, named nowhere in the library). Their definitions are archived: `Z:\Archives\retired-scheduled-tasks\2026-11-15\` (12 XML files, re-importable). **DONE 2026-11-15** on his word (*"Yes, please remove the 12"*): all 12 deleted by name and verified gone (Mothership 62 → 55 tasks outside `\Microsoft\`, BigHonker 41 → 36) |
-| D11 | A project number | [[PROJECT-REGISTRY]]: next free was #40 on 2026-11-06 |
+| D11 | A project number | **RULED 2026-11-22: #40** (*"register it with a number"*) |
 | D12 | **Verbatim lab output shipped as TEST FIXTURES.** Rule 6 keeps run output home and `delivered/` is refused, but these are test inputs: `tablet-foundry/tests/rpctrace_fixture.json` + `rpctrace_hostwait_fixture.json` (traces of named lab runs, ~1,700 lines), `loop_fixtures.json` (two copies: real model answers), `head/tests/think_leak_replies.json` (evaluation answers with run provenance), `test_model_fit.py` (measured fits), `foundry/workspace/flashnext/arsenal.json` (the Flash-Next experiment ledger: measurements AND quotations) | **RULED by the owner's own words, not a new question (checked 2026-11-17 23:10 against his turns since 11-06 and the ruleset):** results are shared work: *"benchmark results and the priced menu"* (11-06), the Fellowship's full cell table is already public in `fellowship-gauntlet-results`, and on 11-17 *"Preserve the historical benchmark results and their provenance as they are"*; the AssBench comparison *"is a public thing … we don't need to be censoring stuff about it"* (11-11). What he said about run output is only that *"those are results to things that we're doing, those aren't necessarily things that are a part of the lab"* (11-15): it need not ship, it is not a leak. A test fixture IS part of the lab's code (the test needs it), `arsenal.json` is a data file the placement gate reads (the lab's own doctrine on the arsenal), so **they ship as they are**, through the same scanners as everything else (addresses, names, locker values, the adult rule). Raw `delivered/` output stays home because it is not the lab. The README's sentence becomes "raw order output stays home; test fixtures and the priced menu ship". The brief's rule 6 wording ("run output of any kind") over-read him; corrected here |
 | D13 | **The story detector's reach.** `code_narrative_scan` keys on four signals (a date, "the owner", a doctrine citation, an emphasised quote). Codex's remaining head findings are UNDATED incident narration in plain comments (`app.py` "all afternoon while the brain box was down", `chat_window.py` two incidents, `tools.py` "three times in one evening") plus one dated comment inside a Python-in-a-string template (`lead_ssh.py`'s schtasks body). The gate's "head 0" is true of the four signals, not of stories as a whole | **RULED by the owner's own words (checked 2026-11-17 23:10):** *"Take my […] stories out of my […] code"* and *"War stories, and comments like that are only allowed in journals"* (11-15); *"Documents can be explanatory, just not story books. That's for journals, transcripts, and the blog pages"* (11-17 06:53); *"maybe don't make the very errors we are removing … We can always mine from transcripts and journals if you want literally what we said or stories"* (11-17 06:38). An incident told in a comment is a story whether or not it carries a date; the four signals were the INSTRUMENT's reach, never his rule. **So: widen candidacy** (an incident-narration signal; the `#` lines of a string that holds a script), hold the new candidates in the gate's baseline so it stays green and admits no new ones, let the weighed drafter judge them, apply, shrink the baseline. Done the same night (§ 9). **The apply needs no fresh word from the owner** (2026-11-17 23:50, his question: *"Do you truly need me?"*): the standing order is *"take my stories out of my code"*, the 2026-11-15 pass was applied the same way after the instruments' review with the gates deciding, and his rule is to decide from the record and report; only an act that leaves the lab (the publish) waits for him |
 
@@ -727,6 +727,42 @@ must exclude the asking process; no hand-placed job files, hand-kills of factory
 | 7 HAIinstaller.exe and HAI.exe | Not started |
 | 8 Change your mind inside HAI | Not started |
 
+### After v0: what is left, in order (written 2026-11-22, at the release)
+
+v0 is released; the project is not finished. the owner, 2026-11-20: *"work the release list, fixing any blocking bugs. we
+can work on updates after we release v0"*. This is that list. Each item says where its detail is, so it can be picked
+up cold.
+
+**A. v0's own follow-ups: make what shipped true for a stranger**
+
+1. **The live one-machine → full-stack switch, with every service up.** The steps are proven on scratch copies in Bash
+   and PowerShell, and both compose files validate on Linux Docker Engine. Nobody has run the switch end to end.
+2. **An outsider walks the quick-start's factory section.** The section says it has not been walked; that sentence goes
+   when it has (`docs/quick-start.md`, "Give the head its factory").
+3. **The factory's Linux half.** Its singleton and process checks call PowerShell, so on Linux the units install and the
+   order taker runs, but those checks are not ported (`docs/quick-start.md` says "unproven").
+4. **Milestone 3's own "Later" list** (above, under the B table): the live one-setting and Spock-placed answers with
+   the owner, four hard-bench tests pinned to aged-out live data, the five label names of B3, the setup scripts'
+   conformance pass, the sanitized Sundae image, McCoy as a table for a one-PC setup, the menu machinery's lab paths,
+   and the stranger test.
+5. **Cosmetic:** GitHub's sidebar reads the licence as "Other", because its detector does not know PolyForm
+   Noncommercial. `LICENSE.md` is right and shows on the page.
+
+**Publishing an update** (built 2026-11-22; the item it replaced is in HAI-Rebuildable-by-Strangers-PLAN-superseded):
+commit every mirror, then `instruments\final_stage.py` (GREEN), then commit `review\` in `hai-release` so the reviewers
+read this copy through Uhura, then `instruments\publish_update.py -m "<what changed>"`. That is a dry run: it clones the
+public repo, lays the tree over it, makes the commit and lists the real changes, counting line-ending-only ones
+separately. Then `--go` on the owner's word: the same, pushed over HTTPS with `gh`'s sign-in, and the remote's `main`
+checked against the commit. `--remote <path>` runs it against a scratch copy.
+
+**B. The plan's next milestones** (§ 6, in its order): 1 the conventions inventory, 4 the roster, 5 a foundry anyone can
+stand up and the link, 6 finding each other on the network, 7 `HAIinstaller.exe` and `HAI.exe`, 8 change your mind
+inside HAI. Decision D9 waits on 7's measurement.
+
+**Not #40's:** the lab gaps found while v0 was built (Uhura's health check, the GPU deploy door's tests, the triage
+charter, the Fellowship roster's classes), the lab work carried along during it, the housekeeping, and the other threads
+the owner holds are listed in CURRENT-PROJECTS, in the 2026-11-22 "To look in on" block.
+
 ## 10. Where the instruments and evidence are
 
 `E:\SSDShared\hai-release\instruments\`:
@@ -744,13 +780,18 @@ must exclude the asking process; no hand-placed job files, hand-kills of factory
 | `staged_suite.sh` | Runs the staged head's own test suite (the gate's exact invocation) in a throwaway container with no network; refuses to report when no tests ran. Compare a swapped build against a `--no-names` build: the failures must be the same tests |
 | `leak_review.py`, `deep_leak_sweep.py` | The review with the owner before any publish: everything arguably personal by category (domains, addresses, MACs, account folders, quotes, profanity, possible people's names, public IPs, every email shape) |
 | `scan_untracked.py` | Before a repo's FIRST commit: scans exactly what `git add -A` would take |
-| `final_stage.py` | Rebuilds the review tree `review\HAI` from every mirror's HEAD, runs the publish check, writes `review\LEAK-REVIEW.md` and `review\DEEP-SWEEP.txt`; read-only against the mirrors |
+| `final_stage.py` | Rebuilds the review tree `review\HAI` from every mirror's HEAD and writes `review\TREE-MANIFEST.tsv`, `LEAK-REVIEW.md` and `DEEP-SWEEP.txt`; GREEN only when all five gates pass (the publish check, the leak review, the deep sweep, the quick-start lint, the fork check); read-only against the mirrors. Commit every mirror BEFORE it runs: a commit during the build makes the dry run refuse |
+| `fork_check.py` | A stranger's fork, set up as the docs say (each `*.example` copied, each bind-mount folder made, the search settings by the documented line), must stage nothing on `git add -A`, and no tracked file outside an `*.example` may hold a secret's placeholder. Its controls run every time: with no ignore files every made file stages, and a planted placeholder is found |
+| `quickstart_lint.py` | Every front-door link, repo path and setting name in the quick-start, against the tree |
 | `menu_drafts_by_hand.py` + `menu-overrides-20261118.json` | Claude's own drafts for a #30 sweep in the pipeline's drafts format (mechanical cleaning re-classified by the detector; the hand rewrites in the overrides file); the lab's applier does the splicing |
 | `menu_apply.py` | A #30 sweep end to end: the instruments' review and corrections, dry apply, Doc's `code_apply_cleanup`, confirm, pre-clean archive, the repo's tests, the story scan (must read 0), commit; `--from <step>` resumes |
 | `review_sweeps.py`, `list_codestrings.py`, `watch_order.py` | Review counts per sweep · the stories inside script strings the drafter cannot reach · a desk-record watcher that exits on a verdict (never acts) |
-| `publish_v0.py` | **THE BUTTON (3.6).** Dry run by default; `--go` on the owner's word makes one history-free commit of `review\HAI` and creates the public `drhawktopus/HAI`. Refuses unless: no `.git` in the tree, a fresh publish check passes NOW with the same file count, the leak report is newer than the tree, `gh` is logged in as the owner, the repo does not exist |
+| `publish_v0.py` | **THE BUTTON (3.6), used 2026-11-22.** Dry run by default; `--go` on the owner's word makes one history-free commit of `review\HAI`, checks the commit holds exactly the manifest's files, creates the public `drhawktopus/HAI`, pushes over HTTPS with `gh`'s sign-in, and checks GitHub's `main` is that commit. Refuses unless: no `.git` in the tree, a fresh build equals the tree, the leak report is newer than the tree, `gh` is logged in as the owner, the repo does not exist. It makes the repo once; an update needs its own path ("After v0", A1) |
+| `publish_update.py` | **Every publish after v0.** One new commit on top of the public repo from the reviewed tree. It runs the same shared checks as the v0 button (`publish_v0.reviewed_tree_problems`), requires `review\` committed in `hai-release` and a `-m` message, and requires the commit (read back by `git archive`) to hold exactly the manifest's files and bytes. It pushes over HTTPS with `gh`'s sign-in and checks the remote's `main`. Dry run by default, `--go` on the owner's word, `--remote` for a scratch copy |
+| `..\review\RECEIPT.md` | The last build's own output (the final stage and the dry run), with the manifest's sha256 and each source's HEAD |
 | `uhura_mirror_audit.py` | Every file the Uhura mirror tracks, by hash, against Sundae |
 
 **The release review is a standing gate (the owner, 2026-11-15): *"Do not publish anything until we've reviewed them together.
 I want to ensure that there are no weird leaks."*** The staged tree for that review is `E:\SSDShared\hai-release\review\HAI`
-with `LEAK-REVIEW.md` beside it (the folder is rebuilt by the publish script and is not tracked).
+with `LEAK-REVIEW.md` beside it. The folder is rebuilt by the final stage; since 2026-11-18 it is tracked in `hai-release`
+so Uhura publishes it for ChatGPT's review. The published v0 is that folder at `e2502ca`.

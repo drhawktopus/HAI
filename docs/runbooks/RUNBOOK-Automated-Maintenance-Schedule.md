@@ -87,8 +87,30 @@ Sent to the server Discord every morning at 4:30am. Reports:
     never quiet.
   - The value goes to the embed through an environment variable, not pasted into the script's code.
   - Backup of the pre-change script: `stack-health-check.sh.bak-20261103-labupd`.
+- **Lab repos** (since 2026-11-22): `/usr/local/bin/repo_state_field.py` (source `E:\SSDShared\Lab\bin\`, with its
+  tests). One line per lab repo that has uncommitted, untracked or unpushed work; "All N repos committed and pushed"
+  when there is none, with N the number it read, so a broken reader never passes for clean.
+  - The repos are Sundae's config repo, the music bot's repo, `/opt/aider-bench`, and the code backup's own list
+    (`HAI_BACKUP_REPOS` in `/etc/hai-code-backup.env`) under `/mnt/ssdshared`. 13 on 2026-11-22.
+  - The share's repos are read as Windows git reads them: Windows' default `core.autocrlf=true` unless the repo sets
+    its own (a repo's own setting wins, as on Windows); otherwise every CRLF file reads as changed.
+  - It never writes to a repo (`git --no-optional-locks`). A plain Linux `git status` over the share rewrites a Windows
+    repo's index, and that changed what Windows git reported (2026-11-22); a run leaves every index untouched (checked).
+  - A repo it cannot read says "could not tell". Whoever sees a line resolves it: commit, push or archive.
+  - Backup of the pre-change script: `stack-health-check.sh.bak-20261122-repostate`.
 
 Script: `/usr/local/bin/stack-health-check.sh`
+
+### Sundae's config repo pushes every commit itself (since 2026-11-22)
+
+`/opt/arrstack/.githooks/post-commit` (versioned in the repo; `git config core.hooksPath .githooks`) pushes each
+commit the moment it is made. the owner asked for unpushed commits to be structurally impossible. A push that fails keeps
+the commit, prints "autopush: the push FAILED" and logs it in `.git/autopush.log`, and the "Lab repos" line above then
+shows the unpushed count. The music bot's repo (`/opt/arrstack/claudediscordbot`) has the same hook in
+`.git/hooks/post-commit`. A fresh clone needs the one `git config core.hooksPath .githooks` line.
+
+The Sunday 5:00 "GitHub config backup" (below) is a different thing: it force-pushes a snapshot of the config to the
+`backup` branch from `/opt/arrstack-backup`, and it never pushed `main`.
 
 ### Watchtower
 
